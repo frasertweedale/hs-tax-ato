@@ -66,6 +66,7 @@ module Data.Tax.ATO
   , taxDue
   , taxCreditsAndOffsets
   , taxBalance
+  , taxCGTAssessment
 
   -- * Tax computations
   , individualTax
@@ -89,9 +90,6 @@ class HasSfssBalance a b where
 
 class HasMLSExemption a where
   mlsExemption :: Lens' (a b) Bool
-
-class HasCapitalLossCarryForward a b where
-  capitalLossCarryForward :: Lens' (a b) (Money b)
 
 data TaxReturnInfo a = TaxReturnInfo
   { _mlsExemption :: Bool
@@ -166,7 +164,7 @@ data TaxAssessment a = TaxAssessment
   , _taxDue :: Money a
   , _taxWithheld :: Money a
   , _taxCreditsAndOffsets :: Money a
-  , _taCapitalLossCarryForward :: Money a
+  , _taCGTAssessment :: CGTAssessment a
   }
 
 class HasTaxableIncome s a where
@@ -184,15 +182,17 @@ taxWithheld = to _taxWithheld
 taxCreditsAndOffsets :: Getter (TaxAssessment a) (Money a)
 taxCreditsAndOffsets = to _taxCreditsAndOffsets
 
+taxCGTAssessment :: Lens' (TaxAssessment a) (CGTAssessment a)
+taxCGTAssessment = lens _taCGTAssessment (\s b -> s { _taCGTAssessment = b })
+
 taxBalance :: Num a => Getter (TaxAssessment a) (Money a)
 taxBalance = to $ \a ->
   view taxWithheld a
   $-$ view taxDue a
   $+$ view taxCreditsAndOffsets a
 
-instance HasCapitalLossCarryForward TaxAssessment a where
-  capitalLossCarryForward = lens _taCapitalLossCarryForward
-      (\s b -> s { _taCapitalLossCarryForward = b })
+instance (Num a, Eq a) => HasCapitalLossCarryForward TaxAssessment a where
+  capitalLossCarryForward = taxCGTAssessment . capitalLossCarryForward
 
 
 individualTax
@@ -216,17 +216,15 @@ individualTax (TaxTables tax ml mls help sfss more) info =
 instance (Fractional a, Ord a) => HasTaxableIncome TaxReturnInfo a where
   taxableIncome = to $ \info ->
     let
+      cf = view capitalLossCarryForward info
       income =
         foldMap summaryGross (view paymentSummaries info)
         <> view interest info
         <> foldMap dividendAttributableIncome (view dividends info)
         -- <> managedFundIncome
-        <> netCapitalGain
+        <> view (cgtEvents . to (assessCGTEvents cf) . cgtNetGain) info
         <> view foreignIncome info
         <> view ess info
-      cg = netCapitalGainOrLoss
-            (view capitalLossCarryForward info) (view cgtEvents info)
-      netCapitalGain = either (const mempty) id cg
     in
       income $-$ view deductions info
 
@@ -235,7 +233,7 @@ assessTax
   => TaxTables a -> TaxReturnInfo a -> TaxAssessment a
 assessTax tables info =
   let
-    cg = netCapitalGainOrLoss
+    cg = assessCGTEvents
           (view capitalLossCarryForward info) (view cgtEvents info)
     taxable = view taxableIncome info
     due = getTax (individualTax tables info) taxable
@@ -252,7 +250,7 @@ assessTax tables info =
       due
       withheld
       (frankingCredit <> off)
-      (either id (const mempty) cg)
+      cg
 
 type ABN = String
 data PaymentSummary a = PaymentSummary
