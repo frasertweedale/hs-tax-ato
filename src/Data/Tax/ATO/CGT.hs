@@ -191,7 +191,7 @@ data CGTAssessment a = CGTAssessment
 instance Functor CGTAssessment where
   fmap f (CGTAssessment a b) = CGTAssessment (fmap f a) (fmap f b)
 
-instance (Num a, Ord a) => HasCapitalGain CGTAssessment a a where
+instance HasCapitalGain CGTAssessment a a where
   capitalGain = to _cgtaTotal
 
 -- | The 'CGTNetGainOrLoss' value of the 'CGTAssessment'
