@@ -40,12 +40,11 @@ module Data.Tax.ATO.CGT
   , CGTAssessment(CGTAssessment)
   , CGTNetGainOrLoss(..)
   , HasCapitalLossCarryForward(..)
-  , cgtTotalGain
   , cgtNetGainOrLoss
   , cgtNetGain
 
   -- * CGT computations
-  , capitalGain
+  , HasCapitalGain(..)
   , capitalLoss
   , isCapitalGain
   , isCapitalLoss
@@ -121,7 +120,7 @@ discountApplicable :: CGTEvent a -> Bool
 discountApplicable ev =
   diffDays (disposalDate ev) (acquisitionDate ev) > 365
 
--- | Compute the capital gain.  Losses are ignored.
+-- | Types that may have a capital gain.  Non-discounted, losses ignored.
 class HasCapitalGain a b c where
   capitalGain :: Getter (a b) (Money c)
 
@@ -130,8 +129,7 @@ instance (Num a, Ord a) => HasCapitalGain CGTEvent a a where
   capitalGain = to capitalGain'
 
 -- | Sum of capital gains, ignoring losses.
---
--- Input /H/ at /item 18/ on tax return.
+-- Input __H__ at /item 18/ on tax return.
 --
 instance (Foldable t, HasCapitalGain x a a, Num a) => HasCapitalGain t (x a) a where
   capitalGain = to (foldMap (view capitalGain))
@@ -193,9 +191,10 @@ data CGTAssessment a = CGTAssessment
 instance Functor CGTAssessment where
   fmap f (CGTAssessment a b) = CGTAssessment (fmap f a) (fmap f b)
 
-cgtTotalGain :: Lens' (CGTAssessment a) (Money a)
-cgtTotalGain = lens _cgtaTotal (\s b -> s { _cgtaTotal = b })
+instance (Num a, Ord a) => HasCapitalGain CGTAssessment a a where
+  capitalGain = to _cgtaTotal
 
+-- | The 'CGTNetGainOrLoss' value of the 'CGTAssessment'
 cgtNetGainOrLoss :: Lens' (CGTAssessment a) (CGTNetGainOrLoss a)
 cgtNetGainOrLoss = lens _cgtaNet (\s b -> s { _cgtaNet = b })
 
@@ -214,6 +213,8 @@ instance Functor CGTNetGainOrLoss where
   fmap f (CGTNetGain a) = CGTNetGain (fmap f a)
   fmap f (CGTLoss a)    = CGTLoss (fmap f a)
 
+-- | Types that have a carry-forward capital loss (either as an
+-- input or an output).
 class HasCapitalLossCarryForward a b where
   capitalLossCarryForward :: Lens' (a b) (Money b)
 
