@@ -20,12 +20,16 @@ Common taxes and helpers.
 
 -}
 
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Data.Tax.ATO.Common
   (
   -- * Tax tables
     TaxTables(..)
+
+  -- * Classes
+  , HasIncome(..)
 
   -- * Common taxes and helpers
   , medicareLevy
@@ -40,7 +44,7 @@ module Data.Tax.ATO.Common
   , roundHalfUp
   ) where
 
-import Control.Lens (review)
+import Control.Lens (Getter, review, to, view)
 import Data.Bifunctor (first)
 
 import Data.Tax
@@ -113,3 +117,11 @@ roundHalfUp x =
       -1 -> n
       0 -> if r < 0 then n else n + 1
       _ -> if r < 0 then n - 1 else n + 1
+
+
+-- | Types that have an income value.
+class HasIncome a b c where
+  income :: Getter (a b) (Money c)
+
+instance (Foldable t, HasIncome x a a, Num a) => HasIncome t (x a) a where
+  income = to (foldMap (view income))

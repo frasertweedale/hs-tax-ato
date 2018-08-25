@@ -36,6 +36,7 @@ module Data.Tax.ATO
   , HasMLSExemption(..)
   , HasCapitalLossCarryForward(..)
   , paymentSummaries
+  , income
   , interest
   , dividends
   , ess
@@ -61,7 +62,6 @@ module Data.Tax.ATO
 
   -- ** Tax assessment
   , TaxAssessment
-  , HasTaxableIncome(..)
   , taxWithheld
   , taxDue
   , taxCreditsAndOffsets
@@ -167,11 +167,9 @@ data TaxAssessment a = TaxAssessment
   , _taCGTAssessment :: CGTAssessment a
   }
 
-class HasTaxableIncome s a where
-  taxableIncome :: Getter (s a) (Money a)
-
-instance HasTaxableIncome TaxAssessment a where
-  taxableIncome = to _taxableIncome
+-- | Taxable income
+instance HasIncome TaxAssessment a a where
+  income = to _taxableIncome
 
 taxDue :: Getter (TaxAssessment a) (Money a)
 taxDue = to _taxDue
@@ -213,12 +211,13 @@ individualTax (TaxTables tax ml mls help sfss more) info =
       <> limit (view sfssBalance info) sfss
       <> more
 
-instance (Fractional a, Ord a) => HasTaxableIncome TaxReturnInfo a where
-  taxableIncome = to $ \info ->
+-- | Taxable income
+instance (Fractional a, Ord a) => HasIncome TaxReturnInfo a a where
+  income = to $ \info ->
     let
       cf = view capitalLossCarryForward info
-      income =
-        foldMap summaryGross (view paymentSummaries info)
+      gross =
+        view (paymentSummaries . income) info
         <> view interest info
         <> foldMap dividendAttributableIncome (view dividends info)
         -- <> managedFundIncome
@@ -226,7 +225,7 @@ instance (Fractional a, Ord a) => HasTaxableIncome TaxReturnInfo a where
         <> view foreignIncome info
         <> view ess info
     in
-      income $-$ view deductions info
+      gross $-$ view deductions info
 
 assessTax
   :: (Fractional a, Ord a)
@@ -235,7 +234,7 @@ assessTax tables info =
   let
     cg = assessCGTEvents
           (view capitalLossCarryForward info) (view cgtEvents info)
-    taxable = view taxableIncome info
+    taxable = view income info
     due = getTax (individualTax tables info) taxable
     wagesWithheld = foldMap summaryWithheld (view paymentSummaries info)
     withheld = wagesWithheld -- <> interestWithheld TODO
@@ -259,6 +258,11 @@ data PaymentSummary a = PaymentSummary
   , summaryWithheld :: Money a
   , reportableEmployerSuperannuationContributions :: Money a
   }
+
+-- | Gross income
+instance HasIncome PaymentSummary a a where
+  income = to summaryGross
+
 
 data Dividend a = Dividend
   { dividendSource :: String
