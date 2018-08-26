@@ -56,7 +56,6 @@ module Data.Tax.ATO
 
   -- ** Tax offsets
   , Offsets
-  , newOffsets
   , spouseContributionOffset
   , foreignTaxOffset
 
@@ -77,6 +76,8 @@ module Data.Tax.ATO
   ) where
 
 import Control.Lens (Getter, Lens', lens, to, view)
+import Data.Semigroup (Semigroup(..))
+import Data.Monoid (Monoid(..))
 
 import Data.Tax
 import Data.Tax.ATO.CGT
@@ -91,6 +92,23 @@ class HasSfssBalance a b where
 class HasMLSExemption a where
   mlsExemption :: Lens' (a b) Bool
 
+-- | Individual tax return information.
+--
+-- Use 'newTaxReturnInfo' to construct.  The following lenses are
+-- available:
+--
+-- * 'mlsExemption': Medicare levy exemption
+-- * 'helpBalance': HELP account balance
+-- * 'sfssBalance': SFSS account balance
+-- * 'paymentSummaries': PAYG payment summaries
+-- * 'interest': Interest data
+-- * 'dividends': Dividend data
+-- * 'ess': Employee Share Scheme (ESS) data
+-- * 'foreignIncome': Foreign income
+-- * 'cgtEvents': Capital gains and losses
+-- * 'deductions': Deductions
+-- * 'offsets': Tax offsets
+--
 data TaxReturnInfo a = TaxReturnInfo
   { _mlsExemption :: Bool
   , _helpBalance :: Money a
@@ -106,6 +124,11 @@ data TaxReturnInfo a = TaxReturnInfo
   , _triCapitalLossCarryForward :: Money a
   }
 
+-- | Construct a new 'TaxReturnInfo'.
+--
+-- All monetary fields and lists are initially empty.
+-- The /Medicare levy exemption/ field is __@False@__.
+--
 newTaxReturnInfo :: Num a => TaxReturnInfo a
 newTaxReturnInfo = TaxReturnInfo
   False  -- MLS exemption
@@ -118,7 +141,7 @@ newTaxReturnInfo = TaxReturnInfo
   mempty -- foreign income
   mempty -- CGT events
   mempty -- deductions
-  newOffsets
+  mempty -- offsets
   mempty -- cap loss carry forward
 
 instance HasHelpBalance TaxReturnInfo b where
@@ -286,16 +309,23 @@ dividendAttributableIncome d =
   <> dividendFrankingCredit d
   <> dividendTaxWithheld d
 
+-- | Tax offsets that individuals can claim
 data Offsets a = Offsets
   { _spouseOffset :: Money a
   , _foreignTaxOffset :: Money a
   }
 
-newOffsets :: Num a => Offsets a
-newOffsets = Offsets mempty mempty
+instance Num a => Semigroup (Offsets a) where
+  Offsets a b <> Offsets a' b' = Offsets (a <> a') (b <> b')
 
+instance Num a => Monoid (Offsets a) where
+  mempty = Offsets mempty mempty
+  Offsets a b `mappend` Offsets a' b' = Offsets (a `mappend` a') (b `mappend` b')
+
+-- | Spouse contribution offset.  Maximum of /$540/ (not enforced).
 spouseContributionOffset :: Lens' (Offsets a) (Money a)
 spouseContributionOffset = lens _spouseOffset (\s b -> s { _spouseOffset = b })
 
+-- | Offset for tax paid on foreign income.
 foreignTaxOffset :: Lens' (Offsets a) (Money a)
 foreignTaxOffset = lens _foreignTaxOffset (\s b -> s { _foreignTaxOffset = b })
