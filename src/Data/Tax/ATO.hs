@@ -54,6 +54,16 @@ module Data.Tax.ATO
   , PaymentSummary(..)
   , ABN
 
+  -- ** Employee share schemes
+  , ESSStatement
+  , newESSStatement
+  , essTaxedUpfrontReduction
+  , essTaxedUpfrontNoReduction
+  , essDeferral
+  , essPre2009
+  , essTFNAmounts
+  , essForeignSourceDiscounts
+
   -- ** Dividends and franking credits
   , Dividend(..)
   , dividendFrankingCredit
@@ -66,7 +76,6 @@ module Data.Tax.ATO
 
   -- ** Tax assessment
   , TaxAssessment
-  , HasTaxWithheld(..)
   , taxDue
   , taxCreditsAndOffsets
   , taxBalance
@@ -78,6 +87,7 @@ module Data.Tax.ATO
 
   -- * Miscellaneous
   , GrossAndWithheld(..)
+  , HasTaxWithheld(..)
   , module Data.Tax
   ) where
 
@@ -123,7 +133,7 @@ class HasMLSExemption a where
 -- +--------------------+----------------------------------+
 -- | 'dividends'        | Dividend data                    |
 -- +--------------------+----------------------------------+
--- | 'ess'              | Employee Share Scheme (ESS) data |
+-- | 'ess'              | Employee Share Scheme statement  |
 -- +--------------------+----------------------------------+
 -- | 'foreignIncome'    | Foreign income                   |
 -- +--------------------+----------------------------------+
@@ -141,7 +151,7 @@ data TaxReturnInfo a = TaxReturnInfo
   , _paymentSummaries :: [PaymentSummary a]
   , _interest :: GrossAndWithheld a
   , _dividends :: [Dividend a]  -- TODO dedicated sum type
-  , _ess :: Money a             -- TODO dedicated type
+  , _ess :: ESSStatement a
   , _foreignIncome :: Money a
   , _cgtEvents :: [CGTEvent a]
   , _deductions :: Money a
@@ -191,7 +201,7 @@ interest = lens _interest (\s b -> s { _interest = b })
 dividends :: Lens' (TaxReturnInfo a) [Dividend a]
 dividends = lens _dividends (\s b -> s { _dividends = b })
 
-ess :: Lens' (TaxReturnInfo a) (Money a)
+ess :: Lens' (TaxReturnInfo a) (ESSStatement a)
 ess = lens _ess (\s b -> s { _ess = b })
 
 foreignIncome :: Lens' (TaxReturnInfo a) (Money a)
@@ -268,10 +278,10 @@ instance (Fractional a, Ord a) => HasIncome TaxReturnInfo a a where
         view (paymentSummaries . income) info
         <> view (interest . income) info
         <> foldMap dividendAttributableIncome (view dividends info)
-        -- <> managedFundIncome
+        <> view (ess . income) info
+        -- <> TODO managedFundIncome
         <> view (cgtEvents . to (assessCGTEvents cf) . cgtNetGain) info
         <> view foreignIncome info
-        <> view ess info
     in
       gross $-$ view deductions info
 
@@ -381,3 +391,69 @@ instance HasIncome GrossAndWithheld a a where
 
 instance HasTaxWithheld GrossAndWithheld a a where
   taxWithheld = to $ \(GrossAndWithheld _ a) -> a
+
+
+-- | Employee share scheme statement.  Use 'newESSStatement' to construct.
+data ESSStatement a = ESSStatement
+  { _taxedUpfrontReduction :: Money a
+  , _taxedUpfrontNoReduction :: Money a
+  , _deferral :: Money a
+  , _pre2009 :: Money a
+  , _tfnAmounts :: Money a
+  , _foreignSourceDiscounts :: Money a
+  }
+
+-- | Construct an 'ESSStatement' with all amounts at /zero/.
+newESSStatement :: Num a => ESSStatement a
+newESSStatement = ESSStatement mempty mempty mempty mempty mempty mempty
+
+-- | Discount from taxed up front schemes—eligible for reduction.
+-- Item __D__ in /Employee share schemes/ section.
+essTaxedUpfrontReduction :: Lens' (ESSStatement a) (Money a)
+essTaxedUpfrontReduction =
+  lens _taxedUpfrontReduction (\s b -> s { _taxedUpfrontReduction = b })
+
+-- | Discount from taxed up front schemes—not eligible for reduction
+-- Item __E__ in /Employee share schemes/ section.
+essTaxedUpfrontNoReduction :: Lens' (ESSStatement a) (Money a)
+essTaxedUpfrontNoReduction =
+  lens _taxedUpfrontNoReduction (\s b -> s { _taxedUpfrontNoReduction = b })
+
+-- | Discount from taxed deferral schemes.
+-- Item __F__ in /Employee share schemes/ section.
+essDeferral :: Lens' (ESSStatement a) (Money a)
+essDeferral = lens _deferral (\s b -> s { _deferral = b })
+
+-- | discounts on ESS interests acquired pre 1 July 2009 and
+-- "cessation time" occurred during the finanical year.
+-- Item __G__ in /Employee share schemes/ section.
+essPre2009 :: Lens' (ESSStatement a) (Money a)
+essPre2009 = lens _pre2009 (\s b -> s { _pre2009 = b })
+
+-- | TFN amounts withheld from discounts.
+-- Item __C__ in /Employee share schemes/ section.
+essTFNAmounts :: Lens' (ESSStatement a) (Money a)
+essTFNAmounts = lens _tfnAmounts (\s b -> s { _tfnAmounts = b })
+
+-- | ESS foreign source discounts
+-- Item __A__ in /Employee share schemes/ section.
+essForeignSourceDiscounts :: Lens' (ESSStatement a) (Money a)
+essForeignSourceDiscounts =
+  lens _foreignSourceDiscounts (\s b -> s { _foreignSourceDiscounts = b })
+
+-- | __Note:__ does not implement the reduction of taxed up front
+-- amounts eligible for reduction.
+instance (Num a) => HasIncome ESSStatement a a where
+  income = to $ \s ->
+    view essTaxedUpfrontReduction s
+    <> view essTaxedUpfrontNoReduction s
+    <> view essDeferral s
+    <> view essPre2009 s
+
+instance (Num a) => Semigroup (ESSStatement a) where
+  ESSStatement a b c d e f <> ESSStatement a' b' c' d' e' f' =
+    ESSStatement (a <> a') (b <> b') (c <> c') (d <> d') (e <> e') (f <> f')
+
+instance (Num a) => Monoid (ESSStatement a) where
+  mempty = newESSStatement
+  mappend = (<>)
