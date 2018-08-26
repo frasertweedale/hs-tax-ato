@@ -20,6 +20,11 @@ Types and taxes in Australia.
 
 No guarantee that computations are correct, complete or current.
 
+Lots of things are not implemented, including (but not limited to):
+ETPs, superannuation income streams and lump payments, tax losses
+from previous years, Medicare levy reduction/exemption, adjustments,
+and variations based on family income and dependents.
+
 -}
 
 {-# LANGUAGE FlexibleInstances #-}
@@ -72,6 +77,7 @@ module Data.Tax.ATO
   , corporateTax
 
   -- * Miscellaneous
+  , GrossAndWithheld(..)
   , module Data.Tax
   ) where
 
@@ -133,7 +139,7 @@ data TaxReturnInfo a = TaxReturnInfo
   , _helpBalance :: Money a
   , _sfssBalance :: Money a
   , _paymentSummaries :: [PaymentSummary a]
-  , _interest :: Money a        -- TODO dedicated type for income + withholding
+  , _interest :: GrossAndWithheld a
   , _dividends :: [Dividend a]  -- TODO dedicated sum type
   , _ess :: Money a             -- TODO dedicated type
   , _foreignIncome :: Money a
@@ -179,7 +185,7 @@ instance HasCapitalLossCarryForward TaxReturnInfo a where
 paymentSummaries :: Lens' (TaxReturnInfo a) [PaymentSummary a]
 paymentSummaries = lens _paymentSummaries (\s b -> s { _paymentSummaries = b })
 
-interest :: Lens' (TaxReturnInfo a) (Money a)
+interest :: Lens' (TaxReturnInfo a) (GrossAndWithheld a)
 interest = lens _interest (\s b -> s { _interest = b })
 
 dividends :: Lens' (TaxReturnInfo a) [Dividend a]
@@ -260,7 +266,7 @@ instance (Fractional a, Ord a) => HasIncome TaxReturnInfo a a where
       cf = view capitalLossCarryForward info
       gross =
         view (paymentSummaries . income) info
-        <> view interest info
+        <> view (interest . income) info
         <> foldMap dividendAttributableIncome (view dividends info)
         -- <> managedFundIncome
         <> view (cgtEvents . to (assessCGTEvents cf) . cgtNetGain) info
@@ -272,7 +278,7 @@ instance (Fractional a, Ord a) => HasIncome TaxReturnInfo a a where
 instance (Num a) => HasTaxWithheld TaxReturnInfo a a where
   taxWithheld = to $ \info ->
     view (paymentSummaries . taxWithheld) info
-    -- <> interestWithheld TODO
+    <> view (interest . taxWithheld) info
 
 assessTax
   :: (Fractional a, Ord a)
@@ -357,3 +363,21 @@ spouseContributionOffset = lens _spouseOffset (\s b -> s { _spouseOffset = b })
 -- | Offset for tax paid on foreign income.
 foreignTaxOffset :: Lens' (Offsets a) (Money a)
 foreignTaxOffset = lens _foreignTaxOffset (\s b -> s { _foreignTaxOffset = b })
+
+-- | A gross income (first argument) and amount of tax withheld (second argument)
+data GrossAndWithheld a = GrossAndWithheld (Money a) (Money a)
+
+instance (Num a) => Semigroup (GrossAndWithheld a) where
+  GrossAndWithheld a b <> GrossAndWithheld a' b' =
+    GrossAndWithheld (a <> a') (b <> b')
+
+instance (Num a) => Monoid (GrossAndWithheld a) where
+  mempty = GrossAndWithheld mempty mempty
+  GrossAndWithheld a b `mappend` GrossAndWithheld a' b' =
+    GrossAndWithheld (a `mappend` a') (b `mappend` b')
+
+instance HasIncome GrossAndWithheld a a where
+  income = to $ \(GrossAndWithheld a _) -> a
+
+instance HasTaxWithheld GrossAndWithheld a a where
+  taxWithheld = to $ \(GrossAndWithheld _ a) -> a
