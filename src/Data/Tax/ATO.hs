@@ -16,13 +16,14 @@
 
 {-|
 
-Types and taxes in Australia.
+Types and computations for taxes in Australia.
 
 No guarantee that computations are correct, complete or current.
 
 Lots of things are not implemented, including (but not limited to):
-ETPs, superannuation income streams and lump payments, tax losses
-from previous years, Medicare levy reduction/exemption, adjustments,
+__ETPs__, income from __partnerships and trusts__,
+__superannuation__ income streams and lump payments, tax losses from
+previous years, __Medicare levy reduction/exemption__, adjustments,
 and variations based on family income and dependents.
 
 -}
@@ -150,7 +151,7 @@ data TaxReturnInfo a = TaxReturnInfo
   , _sfssBalance :: Money a
   , _paymentSummaries :: [PaymentSummary a]
   , _interest :: GrossAndWithheld a
-  , _dividends :: [Dividend a]  -- TODO dedicated sum type
+  , _dividends :: [Dividend a]
   , _ess :: ESSStatement a
   , _foreignIncome :: Money a
   , _cgtEvents :: [CGTEvent a]
@@ -217,6 +218,8 @@ offsets :: Lens' (TaxReturnInfo a) (Offsets a)
 offsets = lens _offsets (\s b -> s { _offsets = b })
 
 
+-- | A tax assessment.  Use 'assessTax' to compute a
+-- @TaxAssessment@.
 data TaxAssessment a = TaxAssessment
   { _taxableIncome :: Money a
   , _taxDue :: Money a
@@ -241,6 +244,8 @@ taxCreditsAndOffsets = to _taxCreditsAndOffsets
 taxCGTAssessment :: Lens' (TaxAssessment a) (CGTAssessment a)
 taxCGTAssessment = lens _taCGTAssessment (\s b -> s { _taCGTAssessment = b })
 
+-- | What is the balance of the assessment?  Positive means a
+-- refund (tax withheld exceeds obligation), negative means a bill.
 taxBalance :: Num a => Getter (TaxAssessment a) (Money a)
 taxBalance = to $ \a ->
   view taxWithheld a
@@ -251,6 +256,9 @@ instance (Num a, Eq a) => HasCapitalLossCarryForward TaxAssessment a where
   capitalLossCarryForward = taxCGTAssessment . capitalLossCarryForward
 
 
+-- | Consolidated individual tax rate incorporating
+-- Medicare levy and surcharge, HELP and SFSS repayments
+-- (if applicable) and automatic offsets (e.g. LITO).
 individualTax
   ::  ( Fractional a, Ord a
       , HasMLSExemption info
@@ -279,7 +287,6 @@ instance (Fractional a, Ord a) => HasIncome TaxReturnInfo a a where
         <> view (interest . income) info
         <> foldMap dividendAttributableIncome (view dividends info)
         <> view (ess . income) info
-        -- <> TODO managedFundIncome
         <> view (cgtEvents . to (assessCGTEvents cf) . cgtNetGain) info
         <> view foreignIncome info
     in
@@ -290,6 +297,7 @@ instance (Num a) => HasTaxWithheld TaxReturnInfo a a where
     view (paymentSummaries . taxWithheld) info
     <> view (interest . taxWithheld) info
 
+-- | Assess a tax return, given tax tables and tax return info.
 assessTax
   :: (Fractional a, Ord a)
   => TaxTables a -> TaxReturnInfo a -> TaxAssessment a
@@ -312,7 +320,10 @@ assessTax tables info =
       (frankingCredit <> off)
       cg
 
+-- | Australian Business Number
 type ABN = String
+
+-- | PAYG payment summary
 data PaymentSummary a = PaymentSummary
   { summaryABN :: ABN
   , summaryGross :: Money a

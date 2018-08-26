@@ -14,6 +14,7 @@
 -- You should have received a copy of the GNU Affero General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+-- | Tax tables for 2018–19 financial year.
 module Data.Tax.ATO.FY.FY2019 (tables) where
 
 import Data.Tax
