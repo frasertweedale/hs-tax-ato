@@ -35,7 +35,7 @@ library
     base >= 4.8 && < 5
     , lens >= 4.12
     , time >= 1.5
-    , tax >= 0.1
+    , tax >= 0.2
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options: -Wall
