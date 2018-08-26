@@ -93,21 +93,32 @@ class HasMLSExemption a where
   mlsExemption :: Lens' (a b) Bool
 
 -- | Individual tax return information.
---
 -- Use 'newTaxReturnInfo' to construct.  The following lenses are
 -- available:
 --
--- * 'mlsExemption': Medicare levy exemption
--- * 'helpBalance': HELP account balance
--- * 'sfssBalance': SFSS account balance
--- * 'paymentSummaries': PAYG payment summaries
--- * 'interest': Interest data
--- * 'dividends': Dividend data
--- * 'ess': Employee Share Scheme (ESS) data
--- * 'foreignIncome': Foreign income
--- * 'cgtEvents': Capital gains and losses
--- * 'deductions': Deductions
--- * 'offsets': Tax offsets
+-- +--------------------+----------------------------------+
+-- | 'mlsExemption'     | Medicare levy exemption          |
+-- +--------------------+----------------------------------+
+-- | 'helpBalance'      | HELP account balance             |
+-- +--------------------+----------------------------------+
+-- | 'sfssBalance'      | SFSS account balance             |
+-- +--------------------+----------------------------------+
+-- | 'paymentSummaries' | PAYG payment summaries           |
+-- +--------------------+----------------------------------+
+-- | 'interest'         | Interest data                    |
+-- +--------------------+----------------------------------+
+-- | 'dividends'        | Dividend data                    |
+-- +--------------------+----------------------------------+
+-- | 'ess'              | Employee Share Scheme (ESS) data |
+-- +--------------------+----------------------------------+
+-- | 'foreignIncome'    | Foreign income                   |
+-- +--------------------+----------------------------------+
+-- | 'cgtEvents'        | Capital gains and losses         |
+-- +--------------------+----------------------------------+
+-- | 'deductions'       | Deductions                       |
+-- +--------------------+----------------------------------+
+-- | 'offsets'          | Tax offsets                      |
+-- +--------------------+----------------------------------+
 --
 data TaxReturnInfo a = TaxReturnInfo
   { _mlsExemption :: Bool
