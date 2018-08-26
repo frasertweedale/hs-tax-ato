@@ -61,7 +61,7 @@ module Data.Tax.ATO
 
   -- ** Tax assessment
   , TaxAssessment
-  , taxWithheld
+  , HasTaxWithheld(..)
   , taxDue
   , taxCreditsAndOffsets
   , taxBalance
@@ -82,6 +82,14 @@ import Data.Monoid (Monoid(..))
 import Data.Tax
 import Data.Tax.ATO.CGT
 import Data.Tax.ATO.Common
+
+-- | Data that can have an amount of tax withheld
+class HasTaxWithheld a b c where
+  taxWithheld :: Getter (a b) (Money c)
+
+instance (Foldable t, HasTaxWithheld x a a, Num a)
+            => HasTaxWithheld t (x a) a where
+  taxWithheld = to (foldMap (view taxWithheld))
 
 class HasHelpBalance a b where
   helpBalance :: Lens' (a b) (Money b)
@@ -205,11 +213,11 @@ data TaxAssessment a = TaxAssessment
 instance HasIncome TaxAssessment a a where
   income = to _taxableIncome
 
+instance HasTaxWithheld TaxAssessment a a where
+  taxWithheld = to _taxWithheld
+
 taxDue :: Getter (TaxAssessment a) (Money a)
 taxDue = to _taxDue
-
-taxWithheld :: Getter (TaxAssessment a) (Money a)
-taxWithheld = to _taxWithheld
 
 taxCreditsAndOffsets :: Getter (TaxAssessment a) (Money a)
 taxCreditsAndOffsets = to _taxCreditsAndOffsets
@@ -261,6 +269,11 @@ instance (Fractional a, Ord a) => HasIncome TaxReturnInfo a a where
     in
       gross $-$ view deductions info
 
+instance (Num a) => HasTaxWithheld TaxReturnInfo a a where
+  taxWithheld = to $ \info ->
+    view (paymentSummaries . taxWithheld) info
+    -- <> interestWithheld TODO
+
 assessTax
   :: (Fractional a, Ord a)
   => TaxTables a -> TaxReturnInfo a -> TaxAssessment a
@@ -270,8 +283,6 @@ assessTax tables info =
           (view capitalLossCarryForward info) (view cgtEvents info)
     taxable = view income info
     due = getTax (individualTax tables info) taxable
-    wagesWithheld = foldMap summaryWithheld (view paymentSummaries info)
-    withheld = wagesWithheld -- <> interestWithheld TODO
 
     frankingCredit = foldMap dividendFrankingCredit (view dividends info)
     off =
@@ -281,7 +292,7 @@ assessTax tables info =
     TaxAssessment
       taxable
       due
-      withheld
+      (view taxWithheld info)
       (frankingCredit <> off)
       cg
 
@@ -297,6 +308,9 @@ data PaymentSummary a = PaymentSummary
 instance HasIncome PaymentSummary a a where
   income = to summaryGross
 
+instance HasTaxWithheld PaymentSummary a a where
+  taxWithheld = to summaryWithheld
+
 
 data Dividend a = Dividend
   { dividendSource :: String
@@ -306,6 +320,9 @@ data Dividend a = Dividend
   , dividendTaxWithheld :: Money a
   }
   deriving (Show)
+
+instance HasTaxWithheld Dividend a a where
+  taxWithheld = to dividendTaxWithheld
 
 -- | Calculate the franking credit for a dividend
 --
@@ -318,7 +335,7 @@ dividendAttributableIncome :: (Fractional a) => Dividend a -> Money a
 dividendAttributableIncome d =
   dividendNetPayment d
   <> dividendFrankingCredit d
-  <> dividendTaxWithheld d
+  <> view taxWithheld d
 
 -- | Tax offsets that individuals can claim
 data Offsets a = Offsets
