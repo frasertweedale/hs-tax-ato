@@ -68,7 +68,6 @@ module Data.Tax.ATO
   -- ** Dividends and franking credits
   , Dividend(..)
   , dividendFrankingCredit
-  , dividendAttributableIncome
 
   -- ** Tax offsets
   , Offsets
@@ -89,6 +88,9 @@ module Data.Tax.ATO
   -- * Miscellaneous
   , GrossAndWithheld(..)
   , HasTaxWithheld(..)
+  , Proportion
+  , getProportion
+  , proportion
   , module Data.Tax
   ) where
 
@@ -146,7 +148,7 @@ class HasMLSExemption a where
 -- +--------------------+----------------------------------+
 --
 data TaxReturnInfo a = TaxReturnInfo
-  { _mlsExemption :: Bool
+  { _mlsExemption :: Bool  -- TODO proportion
   , _helpBalance :: Money a
   , _sfssBalance :: Money a
   , _paymentSummaries :: [PaymentSummary a]
@@ -285,7 +287,7 @@ instance (Fractional a, Ord a) => HasIncome TaxReturnInfo a a where
       gross =
         view (paymentSummaries . income) info
         <> view (interest . income) info
-        <> foldMap dividendAttributableIncome (view dividends info)
+        <> view (dividends . income) info
         <> view (ess . income) info
         <> view (cgtEvents . to (assessCGTEvents cf) . cgtNetGain) info
         <> view foreignIncome info
@@ -338,12 +340,25 @@ instance HasIncome PaymentSummary a a where
 instance HasTaxWithheld PaymentSummary a a where
   taxWithheld = to summaryWithheld
 
+-- | A proportion is a non-negative number in interval @[0,1]@.
+-- Use 'proportion' to construct.
+newtype Proportion a = Proportion
+  { getProportion :: a -- ^ Return underlying figure, which is in interval @[0,1]@
+  }
+  deriving (Show, Eq, Ord)
 
+-- | Construct a proportion.  Out of range numbers are clamped
+-- to @0@ or @1@ (no runtime errors).
+proportion :: (Ord a, Num a) => a -> Proportion a
+proportion = Proportion . max 0 . min 1
+
+-- | Dividend payment.  Records net income, franked portion
+-- and amount of tax withheld.
 data Dividend a = Dividend
   { dividendSource :: String
   , dividendDate :: String  -- FUTURE better type
   , dividendNetPayment :: Money a
-  , dividendFrankedPortion :: a    -- ^ Franked ratio (@1@ = 100%)
+  , dividendFrankedPortion :: Proportion a  -- ^ Franked ratio (@1@ = 100%)
   , dividendTaxWithheld :: Money a
   }
   deriving (Show)
@@ -355,14 +370,15 @@ instance HasTaxWithheld Dividend a a where
 --
 dividendFrankingCredit :: (Fractional a) => Dividend a -> Money a
 dividendFrankingCredit d =
-  dividendFrankedPortion d
+  (getProportion . dividendFrankedPortion) d
   *$ getTax corporateTax (dividendNetPayment d $* (1 / 0.7))
 
-dividendAttributableIncome :: (Fractional a) => Dividend a -> Money a
-dividendAttributableIncome d =
-  dividendNetPayment d
-  <> dividendFrankingCredit d
-  <> view taxWithheld d
+-- | Attributable income
+instance (Fractional a) => HasIncome Dividend a a where
+  income = to $ \d ->
+    dividendNetPayment d
+    <> dividendFrankingCredit d
+    <> view taxWithheld d
 
 -- | Tax offsets that individuals can claim
 data Offsets a = Offsets
