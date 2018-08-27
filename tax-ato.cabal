@@ -34,6 +34,7 @@ library
   build-depends:
     base >= 4.8 && < 5
     , lens >= 4.12
+    , semigroups >= 0.16
     , time >= 1.5
     , tax >= 0.2
   hs-source-dirs:      src
