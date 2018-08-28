@@ -10,7 +10,7 @@ license:             AGPL-3
 license-file:        LICENSE
 author:              Fraser Tweedale
 maintainer:          frase@frase.id.au
--- copyright:
+copyright:           Copyright (C) 2018 Fraser Tweedale
 category:            Finance
 build-type:          Simple
 cabal-version:       >=1.10
