@@ -28,6 +28,7 @@ library
     Data.Tax.ATO
     Data.Tax.ATO.CGT
     Data.Tax.ATO.Common
+    Data.Tax.ATO.Days
     Data.Tax.ATO.FY.FY2017
     Data.Tax.ATO.FY.FY2018
     Data.Tax.ATO.FY.FY2019

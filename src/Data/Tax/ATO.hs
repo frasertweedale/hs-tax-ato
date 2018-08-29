@@ -37,9 +37,7 @@ module Data.Tax.ATO
     assessTax
   , TaxReturnInfo
   , newTaxReturnInfo
-  , HasHelpBalance(..)
-  , HasSfssBalance(..)
-  , HasMLSExemption(..)
+  , newTaxReturnInfoForTables
   , HasCapitalLossCarryForward(..)
   , paymentSummaries
   , income
@@ -50,6 +48,9 @@ module Data.Tax.ATO
   , cgtEvents
   , deductions
   , offsets
+  , mlsExemption
+  , helpBalance
+  , sfssBalance
 
   -- ** PAYG Payment Summaries
   , PaymentSummary(..)
@@ -101,6 +102,7 @@ import Data.Monoid (Monoid(..))
 import Data.Tax
 import Data.Tax.ATO.CGT
 import Data.Tax.ATO.Common
+import Data.Tax.ATO.Days
 
 -- | Data that can have an amount of tax withheld
 class HasTaxWithheld a b c where
@@ -110,18 +112,13 @@ instance (Foldable t, HasTaxWithheld x a a, Num a)
             => HasTaxWithheld t (x a) a where
   taxWithheld = to (foldMap (view taxWithheld))
 
-class HasHelpBalance a b where
-  helpBalance :: Lens' (a b) (Money b)
-
-class HasSfssBalance a b where
-  sfssBalance :: Lens' (a b) (Money b)
-
-class HasMLSExemption a where
-  mlsExemption :: Lens' (a b) Bool
-
 -- | Individual tax return information.
--- Use 'newTaxReturnInfo' to construct.  The following lenses are
--- available:
+--
+-- Use 'newTaxReturnInfo' to construct.  Alternatively,
+-- 'newTaxReturnInfoForTables' can be used to coerce the type
+-- parameters to be the same as some 'TaxTables'.
+--
+-- The following lenses are available:
 --
 -- +--------------------+----------------------------------+
 -- | 'mlsExemption'     | Medicare levy exemption          |
@@ -147,8 +144,8 @@ class HasMLSExemption a where
 -- | 'offsets'          | Tax offsets                      |
 -- +--------------------+----------------------------------+
 --
-data TaxReturnInfo a = TaxReturnInfo
-  { _mlsExemption :: Bool  -- TODO proportion
+data TaxReturnInfo y a = TaxReturnInfo
+  { _mlsExemption :: Days y
   , _helpBalance :: Money a
   , _sfssBalance :: Money a
   , _paymentSummaries :: [PaymentSummary a]
@@ -165,11 +162,16 @@ data TaxReturnInfo a = TaxReturnInfo
 -- | Construct a new 'TaxReturnInfo'.
 --
 -- All monetary fields and lists are initially empty.
--- The /Medicare levy exemption/ field is __@False@__.
 --
-newTaxReturnInfo :: Num a => TaxReturnInfo a
+-- The /Medicare levy surcharge exemption/ field is initially
+-- set to the number of days in the year (i.e. the taxpayer is
+-- fully exempt).
+--
+newTaxReturnInfo
+  :: (DaysInYear y, Num a)
+  => TaxReturnInfo y a
 newTaxReturnInfo = TaxReturnInfo
-  False  -- MLS exemption
+  daysAll  -- MLS exemption
   mempty -- HELP
   mempty -- SFSS
   mempty -- payment summaries
@@ -182,41 +184,50 @@ newTaxReturnInfo = TaxReturnInfo
   mempty -- offsets
   mempty -- cap loss carry forward
 
-instance HasHelpBalance TaxReturnInfo b where
-  helpBalance = lens _helpBalance (\s b -> s { _helpBalance = b })
+-- | Construct a 'TaxReturnInfo' per 'newTaxReturnInfo',
+-- coercing the type parameters to match the 'TaxTables'
+-- argument (which is ignored).
+--
+newTaxReturnInfoForTables
+  :: (DaysInYear y, Num a)
+  => TaxTables y a -> TaxReturnInfo y a
+newTaxReturnInfoForTables _ = newTaxReturnInfo
 
-instance HasSfssBalance TaxReturnInfo b where
-  sfssBalance = lens _sfssBalance (\s b -> s { _sfssBalance = b })
-
-instance HasMLSExemption TaxReturnInfo where
-  mlsExemption = lens _mlsExemption (\s b -> s { _mlsExemption = b })
-
-instance HasCapitalLossCarryForward TaxReturnInfo a where
+instance HasCapitalLossCarryForward (TaxReturnInfo y) a where
   capitalLossCarryForward = lens _triCapitalLossCarryForward
       (\s b -> s { _triCapitalLossCarryForward = b })
 
-paymentSummaries :: Lens' (TaxReturnInfo a) [PaymentSummary a]
+helpBalance :: Lens' (TaxReturnInfo y a) (Money a)
+helpBalance = lens _helpBalance (\s b -> s { _helpBalance = b })
+
+sfssBalance :: Lens' (TaxReturnInfo y a) (Money a)
+sfssBalance = lens _sfssBalance (\s b -> s { _sfssBalance = b })
+
+mlsExemption :: Lens' (TaxReturnInfo y a) (Days y)
+mlsExemption = lens _mlsExemption (\s b -> s { _mlsExemption = b })
+
+paymentSummaries :: Lens' (TaxReturnInfo y a) [PaymentSummary a]
 paymentSummaries = lens _paymentSummaries (\s b -> s { _paymentSummaries = b })
 
-interest :: Lens' (TaxReturnInfo a) (GrossAndWithheld a)
+interest :: Lens' (TaxReturnInfo y a) (GrossAndWithheld a)
 interest = lens _interest (\s b -> s { _interest = b })
 
-dividends :: Lens' (TaxReturnInfo a) [Dividend a]
+dividends :: Lens' (TaxReturnInfo y a) [Dividend a]
 dividends = lens _dividends (\s b -> s { _dividends = b })
 
-ess :: Lens' (TaxReturnInfo a) (ESSStatement a)
+ess :: Lens' (TaxReturnInfo y a) (ESSStatement a)
 ess = lens _ess (\s b -> s { _ess = b })
 
-foreignIncome :: Lens' (TaxReturnInfo a) (Money a)
+foreignIncome :: Lens' (TaxReturnInfo y a) (Money a)
 foreignIncome = lens _foreignIncome (\s b -> s { _foreignIncome = b })
 
-cgtEvents :: Lens' (TaxReturnInfo a) [CGTEvent a]
+cgtEvents :: Lens' (TaxReturnInfo y a) [CGTEvent a]
 cgtEvents = lens _cgtEvents (\s b -> s { _cgtEvents = b })
 
-deductions :: Lens' (TaxReturnInfo a) (Money a)
+deductions :: Lens' (TaxReturnInfo y a) (Money a)
 deductions = lens _deductions (\s b -> s { _deductions = b })
 
-offsets :: Lens' (TaxReturnInfo a) (Offsets a)
+offsets :: Lens' (TaxReturnInfo y a) (Offsets a)
 offsets = lens _offsets (\s b -> s { _offsets = b })
 
 
@@ -262,25 +273,26 @@ instance (Num a, Eq a) => HasCapitalLossCarryForward TaxAssessment a where
 -- Medicare levy and surcharge, HELP and SFSS repayments
 -- (if applicable) and automatic offsets (e.g. LITO).
 individualTax
-  ::  ( Fractional a, Ord a
-      , HasMLSExemption info
-      , HasHelpBalance info a
-      , HasSfssBalance info a
-      )
-  => TaxTables a
-  -> info a
+  :: (DaysInYear y, Fractional a, Ord a)
+  => TaxTables y a
+  -> TaxReturnInfo y a
   -> Tax (Money a) (Money a)    -- grand unified individual income tax
 individualTax (TaxTables tax ml mls help sfss more) info =
+  let
+    mlsFrac = 1 - getFraction (view mlsExemption info)
+  in
     greaterOf mempty $
       tax
       <> ml  -- TODO medicare levy exemption
-      <> (if view mlsExemption info then mempty else mls)
+      <> fmap ($* mlsFrac) mls -- FIXME income for MLS purposes
+                               -- includes fringe benefits;
+                               -- family thresholds apply
       <> limit (view helpBalance info) help
       <> limit (view sfssBalance info) sfss
       <> more
 
 -- | Taxable income
-instance (Fractional a, Ord a) => HasIncome TaxReturnInfo a a where
+instance (Fractional a, Ord a) => HasIncome (TaxReturnInfo y) a a where
   income = to $ \info ->
     let
       cf = view capitalLossCarryForward info
@@ -294,15 +306,15 @@ instance (Fractional a, Ord a) => HasIncome TaxReturnInfo a a where
     in
       gross $-$ view deductions info
 
-instance (Num a) => HasTaxWithheld TaxReturnInfo a a where
+instance (Num a) => HasTaxWithheld (TaxReturnInfo y) a a where
   taxWithheld = to $ \info ->
     view (paymentSummaries . taxWithheld) info
     <> view (interest . taxWithheld) info
 
 -- | Assess a tax return, given tax tables and tax return info.
 assessTax
-  :: (Fractional a, Ord a)
-  => TaxTables a -> TaxReturnInfo a -> TaxAssessment a
+  :: (DaysInYear y, Fractional a, Ord a)
+  => TaxTables y a -> TaxReturnInfo y a -> TaxAssessment a
 assessTax tables info =
   let
     cg = assessCGTEvents

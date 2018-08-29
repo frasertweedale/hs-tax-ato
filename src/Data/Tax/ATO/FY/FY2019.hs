@@ -14,11 +14,14 @@
 -- You should have received a copy of the GNU Affero General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+{-# LANGUAGE DataKinds #-}
+
 -- | Tax tables for 2018–19 financial year.
 module Data.Tax.ATO.FY.FY2019 (tables) where
 
 import Data.Tax
 import Data.Tax.ATO.Common
+import Data.Tax.ATO.Days
 import qualified Data.Tax.ATO.FY.FY2018 as FY2018
 
 -- | In FY2019 the 37% threshold was increased from $87,000 to $90,000.
@@ -44,7 +47,7 @@ sfss = thresholds' [(51957, 0.02), (64307, 0.01), (91426, 0.01)]
 -- NOTE: Medicare levy thresholds have not yet been announced.
 -- Re-using thresholds from FY2018.
 --
-tables :: (Ord a, Fractional a) => TaxTables a
+tables :: (Ord a, Fractional a) => TaxTables 'CommonYear a
 tables = TaxTables
   individualIncomeTax
   (ttMedicareLevy FY2018.tables)

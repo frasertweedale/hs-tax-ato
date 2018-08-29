@@ -14,12 +14,15 @@
 -- You should have received a copy of the GNU Affero General Public License
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+{-# LANGUAGE DataKinds #-}
+
 -- | Tax tables for 2017–18 financial year.
 module Data.Tax.ATO.FY.FY2018 (tables) where
 
 import Control.Lens (review)
 import Data.Tax
 import Data.Tax.ATO.Common
+import Data.Tax.ATO.Days
 import qualified Data.Tax.ATO.FY.FY2017 as FY2017
 
 help, sfss :: (Fractional a, Ord a) => Tax (Money a) (Money a)
@@ -33,7 +36,7 @@ sfss = thresholds' [(55874, 0.02), (68603, 0.01), (97378, 0.01)]
 --
 -- The /temporary budget repair levy/ no longer applies.
 --
-tables :: (Ord a, Fractional a) => TaxTables a
+tables :: (Ord a, Fractional a) => TaxTables 'CommonYear a
 tables = TaxTables
   FY2017.individualIncomeTax
   (medicareLevy (review money 21980))
