@@ -33,6 +33,7 @@ library
     Data.Tax.ATO.FY.FY2018
     Data.Tax.ATO.FY.FY2019
     Data.Tax.ATO.FY.FY2020
+    Data.Tax.ATO.FY.FY2021
   -- other-modules:
   -- other-extensions:
   build-depends:
