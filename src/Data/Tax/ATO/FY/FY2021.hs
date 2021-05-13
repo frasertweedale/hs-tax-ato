@@ -19,6 +19,8 @@
 -- | Tax tables for 2020–21 financial year.
 module Data.Tax.ATO.FY.FY2021 (tables) where
 
+import Control.Lens (review)
+
 import Data.Tax
 import Data.Tax.ATO.Common
 import Data.Tax.ATO.Days
@@ -52,7 +54,7 @@ help = thresholds'
 tables :: (Ord a, Fractional a) => TaxTables 'CommonYear a
 tables = TaxTables
   (ttIndividualIncomeTax FY2020.tables)
-  (ttMedicareLevy FY2020.tables)
+  (medicareLevy (review money 23226))
   medicareLevySurcharge
   help
   help
