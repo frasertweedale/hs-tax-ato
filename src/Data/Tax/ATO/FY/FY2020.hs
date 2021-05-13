@@ -1,5 +1,5 @@
 -- This file is part of hs-tax-ato
--- Copyright (C) 2020  Fraser Tweedale
+-- Copyright (C) 2020, 2021  Fraser Tweedale
 --
 -- hs-tax-ato is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU Affero General Public License as published by
@@ -52,7 +52,7 @@ help = thresholds'
 -- one set of thresholds and rates.  For backwards compatibility,
 -- 'ttHelp' and 'ttSfss' now refer to the same value.
 --
-tables :: (Ord a, Fractional a) => TaxTables 'CommonYear a
+tables :: (Ord a, Fractional a) => TaxTables 'LeapYear a
 tables = TaxTables
   (ttIndividualIncomeTax FY2019.tables)
   (medicareLevy (review money 22801))
