@@ -37,6 +37,7 @@ module Data.Tax.ATO.Common
   , medicareLevy
   , medicareLevySurcharge
   , lowIncomeTaxOffset
+  , lowIncomeTaxOffset2021
   , lamito
   , corporateTax
 
@@ -89,6 +90,14 @@ lowIncomeTaxOffset :: (Fractional a, Ord a) => Tax (Money a) (Money a)
 lowIncomeTaxOffset =
   limit mempty
   (lump (review money (-445)) <> above (review money 37000) 0.015)
+
+-- | /Low income tax offset/, 2020–21 version.
+lowIncomeTaxOffset2021 :: (Fractional a, Ord a) => Tax (Money a) (Money a)
+lowIncomeTaxOffset2021 =
+  limit mempty $
+    lump (review money (-700))
+    <> above (review money 37500) 0.05
+    <> above (review money 45000) (-0.035)
 
 -- | Low and middle income tax offset. FY2019, 2020, 2021, 2022.
 --
