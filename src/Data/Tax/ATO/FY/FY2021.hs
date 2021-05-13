@@ -24,7 +24,16 @@ import Control.Lens (review)
 import Data.Tax
 import Data.Tax.ATO.Common
 import Data.Tax.ATO.Days
-import qualified Data.Tax.ATO.FY.FY2020 as FY2020
+
+-- | In 2020–21 the 32.5% threshold was increased from $37,000 to
+-- $45,000, and the 37% threshold was increased from $90,000 to
+-- $120,000.
+individualIncomeTax :: (Fractional a, Ord a) => Tax (Money a) (Money a)
+individualIncomeTax = marginal'
+  [ (18200, 0.19)
+  , (45000, 0.325 - 0.19)
+  , (120000, 0.37 - 0.325)
+  , (180000, 0.45 - 0.37) ]
 
 help :: (Fractional a, Ord a) => Tax (Money a) (Money a)
 help = thresholds'
@@ -53,7 +62,7 @@ help = thresholds'
 --
 tables :: (Ord a, Fractional a) => TaxTables 'CommonYear a
 tables = TaxTables
-  (ttIndividualIncomeTax FY2020.tables)
+  individualIncomeTax
   (medicareLevy (review money 23226))
   medicareLevySurcharge
   help
