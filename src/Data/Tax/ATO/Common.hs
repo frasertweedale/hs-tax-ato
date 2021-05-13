@@ -103,9 +103,10 @@ lowIncomeTaxOffset2021 =
 --
 lamito :: (Fractional a, Ord a) => Tax (Money a) (Money a)
 lamito = limit mempty $
-  lump (review money (-200))
-  <> (fmap . fmap) negate (limit (review money 330) (above (review money 37000) 0.03))
-  <> above (review money 90000) 0.015
+  greaterOf (lump (review money (-1080)))
+    ( lump (review money (-255))
+    <> above (review money 37000) (-0.075) )
+  <> above (review money 90000) 0.03
 
 -- | The corporate tax rate of 30%.  In the future, different rates may
 -- be levied depending on business turnover/income.
