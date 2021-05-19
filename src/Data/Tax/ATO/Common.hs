@@ -69,7 +69,7 @@ data TaxTables (y :: YearType) a = TaxTables
 -- or 2% of the total income, whichever is less.
 --
 medicareLevy :: (Fractional a, Ord a) => Money a -> Tax (Money a) (Money a)
-medicareLevy l = threshold' l (lesserOf (above l 0.1) (flat 0.02))
+medicareLevy l = lesserOf (above l 0.1) (flat 0.02)
 
 -- | /Medicare levy surcharge (MLS)/.  Certain exemptions are available.
 --
