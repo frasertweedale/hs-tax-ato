@@ -44,6 +44,7 @@ module Data.Tax.ATO.Common
   , thresholds'
   , marginal'
   , roundHalfUp
+  , wholeDollars
   ) where
 
 import Control.Lens (Getter, review, to, view)
@@ -128,6 +129,10 @@ roundHalfUp x =
       -1 -> n
       0 -> if r < 0 then n else n + 1
       _ -> if r < 0 then n - 1 else n + 1
+
+-- | Discard cents
+wholeDollars :: (RealFrac a) => Money a -> Money a
+wholeDollars = fmap (fromInteger . truncate)
 
 
 -- | Types that have an income value.
