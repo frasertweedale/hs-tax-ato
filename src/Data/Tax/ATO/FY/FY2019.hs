@@ -23,7 +23,6 @@ import Control.Lens (review)
 
 import Data.Tax
 import Data.Tax.ATO.Common
-import Data.Tax.ATO.Days
 
 -- | In FY2019 the 37% threshold was increased from $87,000 to $90,000.
 individualIncomeTax :: (Fractional a, Ord a) => Tax (Money a) (Money a)
@@ -45,7 +44,7 @@ sfss = thresholds' [(51957, 0.02), (64307, 0.01), (91426, 0.01)]
 -- The new /low and middle income tax offset (LAMITO)/ was
 -- introduced, in addition to LITO.
 --
-tables :: (Ord a, Fractional a) => TaxTables 'CommonYear a
+tables :: (Ord a, Fractional a) => TaxTables 2019 a
 tables = TaxTables
   individualIncomeTax
   (medicareLevy (review money 22398))

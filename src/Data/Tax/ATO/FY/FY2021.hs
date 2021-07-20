@@ -23,7 +23,6 @@ import Control.Lens (review)
 
 import Data.Tax
 import Data.Tax.ATO.Common
-import Data.Tax.ATO.Days
 
 -- | In 2020–21 the 32.5% threshold was increased from $37,000 to
 -- $45,000, and the 37% threshold was increased from $90,000 to
@@ -60,7 +59,7 @@ help = thresholds'
 -- | NOTE: Medicare levy thresholds have not yet been announced.
 -- Re-using thresholds from FY2020.
 --
-tables :: (Ord a, Fractional a) => TaxTables 'CommonYear a
+tables :: (Ord a, Fractional a) => TaxTables 2021 a
 tables = TaxTables
   individualIncomeTax
   (medicareLevy (review money 23226))

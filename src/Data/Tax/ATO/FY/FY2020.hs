@@ -23,7 +23,6 @@ import Control.Lens (review)
 
 import Data.Tax
 import Data.Tax.ATO.Common
-import Data.Tax.ATO.Days
 import qualified Data.Tax.ATO.FY.FY2019 as FY2019
 
 help :: (Fractional a, Ord a) => Tax (Money a) (Money a)
@@ -52,7 +51,7 @@ help = thresholds'
 -- one set of thresholds and rates.  For backwards compatibility,
 -- 'ttHelp' and 'ttSfss' now refer to the same value.
 --
-tables :: (Ord a, Fractional a) => TaxTables 'LeapYear a
+tables :: (Ord a, Fractional a) => TaxTables 2020 a
 tables = TaxTables
   (ttIndividualIncomeTax FY2019.tables)
   (medicareLevy (review money 22801))

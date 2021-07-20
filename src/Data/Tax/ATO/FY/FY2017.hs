@@ -22,7 +22,6 @@ module Data.Tax.ATO.FY.FY2017 (tables, individualIncomeTax) where
 import Control.Lens (review)
 import Data.Tax
 import Data.Tax.ATO.Common
-import Data.Tax.ATO.Days
 
 -- | In FY2017 the 37% threshold was raised from $80,000 to $87,000
 --
@@ -48,7 +47,7 @@ sfss = thresholds' [(54869, 0.02), (67369, 0.01), (95627, 0.01)]
 -- The Temporary Budget Repair Levy, 2% of income above $180,000,
 -- occurred in 2014-15, 2015-16, 2016-17.  This was the final year.
 --
-tables :: (Ord a, Fractional a) => TaxTables 'CommonYear a
+tables :: (Ord a, Fractional a) => TaxTables 2017 a
 tables = TaxTables
   (individualIncomeTax <> temporaryBudgetRepairLevy)
   (medicareLevy (review money 21656))

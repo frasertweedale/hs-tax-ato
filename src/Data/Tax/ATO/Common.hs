@@ -21,9 +21,8 @@ Common taxes and helpers.
 -}
 
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds #-}
 
 module Data.Tax.ATO.Common
   (
@@ -51,10 +50,9 @@ import Control.Lens (Getter, review, to, view)
 import Data.Bifunctor (first)
 
 import Data.Tax
-import Data.Tax.ATO.Days
 
 -- | A set of tax tables for a particular financial year
-data TaxTables (y :: YearType) a = TaxTables
+data TaxTables y a = TaxTables
   { ttIndividualIncomeTax :: Tax (Money a) (Money a)
   , ttMedicareLevy :: Tax (Money a) (Money a)
   , ttMedicareLevySurcharge :: Tax (Money a) (Money a)

@@ -20,8 +20,8 @@ Types for representing a number of days in a year.
 
 -}
 
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -32,29 +32,26 @@ module Data.Tax.ATO.Days
   , daysNone
   , getDays
   , getFraction
-  , YearType(..)
-  , DaysInYear(..)
+  , DaysInYear
   )
   where
 
+import GHC.TypeLits
 import Data.Proxy
 import Data.Ratio ((%))
 
--- | Type of year (common or leap)
-data YearType = CommonYear | LeapYear
+import Data.Time.Calendar (isLeapYear)
 
--- | Get the number of days for the 'YearType'
-class DaysInYear (a :: YearType) where
-  daysInYear :: Proxy a -> Integer
+type Year = Nat
+type DaysInYear = KnownNat
 
-instance DaysInYear 'CommonYear where
-  daysInYear _ = 365
-
-instance DaysInYear 'LeapYear where
-  daysInYear _ = 366
+daysInYear :: KnownNat n => Proxy n -> Integer
+daysInYear proxy = case isLeapYear (natVal proxy) of
+  False -> 365
+  True  -> 366
 
 -- | Some number of days in a year.  Use 'days' to construct.
-newtype Days (n :: YearType) = Days
+newtype Days (n :: Year) = Days
   { getDays :: Integer
   -- ^ Get the number of days, which is between 0 and 365/366 inclusive.
   }
