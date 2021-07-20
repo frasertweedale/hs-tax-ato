@@ -78,6 +78,7 @@ module Data.Tax.ATO
   -- ** Tax assessment
   , TaxAssessment
   , taxDue
+  , medicareLevyDue
   , taxCreditsAndOffsets
   , taxBalance
   , taxCGTAssessment
@@ -236,6 +237,7 @@ offsets = lens _offsets (\s b -> s { _offsets = b })
 data TaxAssessment a = TaxAssessment
   { _taxableIncome :: Money a
   , _taxDue :: Money a
+  , _medicareLevyDue :: Money a
   , _taxWithheld :: Money a
   , _taxCreditsAndOffsets :: Money a
   , _taCGTAssessment :: CGTAssessment a
@@ -251,6 +253,9 @@ instance HasTaxWithheld TaxAssessment a a where
 taxDue :: Getter (TaxAssessment a) (Money a)
 taxDue = to _taxDue
 
+medicareLevyDue :: Getter (TaxAssessment a) (Money a)
+medicareLevyDue = to _medicareLevyDue
+
 taxCreditsAndOffsets :: Getter (TaxAssessment a) (Money a)
 taxCreditsAndOffsets = to _taxCreditsAndOffsets
 
@@ -263,6 +268,7 @@ taxBalance :: Num a => Getter (TaxAssessment a) (Money a)
 taxBalance = to $ \a ->
   view taxWithheld a
   $-$ view taxDue a
+  $-$ view medicareLevyDue a
   $+$ view taxCreditsAndOffsets a
 
 instance (Num a, Eq a) => HasCapitalLossCarryForward TaxAssessment a where
@@ -270,26 +276,35 @@ instance (Num a, Eq a) => HasCapitalLossCarryForward TaxAssessment a where
 
 
 -- | Consolidated individual tax rate incorporating
--- Medicare levy and surcharge, HELP and SFSS repayments
+-- HELP and SFSS repayments
 -- (if applicable) and automatic offsets (e.g. LITO).
 individualTax
-  :: (DaysInYear y, Fractional a, Ord a)
+  :: (Fractional a, Ord a)
   => TaxTables y a
   -> TaxReturnInfo y a
-  -> Tax (Money a) (Money a)    -- grand unified individual income tax
-individualTax (TaxTables tax ml mls help sfss more) info =
-  let
-    mlsFrac = 1 - getFraction (view mlsExemption info)
-  in
+  -> Tax (Money a) (Money a)
+individualTax (TaxTables tax _ml _mls help sfss more) info =
     greaterOf mempty $
       tax
-      <> ml  -- TODO medicare levy exemption
-      <> fmap ($* mlsFrac) mls -- FIXME income for MLS purposes
-                               -- includes fringe benefits;
-                               -- family thresholds apply
       <> limit (view helpBalance info) help
       <> limit (view sfssBalance info) sfss
       <> more
+
+-- | Medicare levy + surcharge
+medicareLevyTax
+  :: (DaysInYear y, Fractional a)
+  => TaxTables y a
+  -> TaxReturnInfo y a
+  -> Tax (Money a) (Money a)    -- grand unified individual income tax
+medicareLevyTax (TaxTables _tax ml mls _help _sfss _more) info =
+  let
+    mlsFrac = 1 - getFraction (view mlsExemption info)
+  in
+    -- TODO medicare levy exemption
+    ml
+    -- FIXME income for MLS purposes includes
+    -- fringe benefits; family thresholds apply
+    <> fmap ($* mlsFrac) mls
 
 -- | Taxable income
 instance (Fractional a, Ord a) => HasIncome (TaxReturnInfo y) a a where
@@ -330,6 +345,7 @@ assessTax tables info =
     TaxAssessment
       taxable
       due
+      (getTax (medicareLevyTax tables info) taxable)
       (view taxWithheld info)
       (frankingCredit <> off)
       cg
