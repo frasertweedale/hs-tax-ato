@@ -305,19 +305,20 @@ medicareLevyTax (TaxTables _tax ml mls _help _sfss _more) info =
     <> fmap ($* mlsFrac) mls
 
 -- | Taxable income
-instance (Fractional a, Ord a) => HasIncome (TaxReturnInfo y) a a where
+instance (RealFrac a) => HasIncome (TaxReturnInfo y) a a where
   income = to $ \info ->
     let
       cf = view capitalLossCarryForward info
-      gross =
-        view (paymentSummaries . income) info
-        <> view (interest . income) info
-        <> view (dividends . income) info
-        <> view (ess . income) info
-        <> view (cgtEvents . to (assessCGTEvents cf) . cgtNetGain) info
-        <> view foreignIncome info
+      gross = foldMap wholeDollars
+        [ view (paymentSummaries . income) info
+        , view (interest . income) info
+        , view (dividends . income) info
+        , view (ess . income) info
+        , view (cgtEvents . to (assessCGTEvents cf) . cgtNetGain) info
+        , view foreignIncome info
+        ]
     in
-      gross $-$ view deductions info
+      wholeDollars (gross $-$ view deductions info)
 
 instance (Num a) => HasTaxWithheld (TaxReturnInfo y) a a where
   taxWithheld = to $ \info ->
@@ -326,7 +327,7 @@ instance (Num a) => HasTaxWithheld (TaxReturnInfo y) a a where
 
 -- | Assess a tax return, given tax tables and tax return info.
 assessTax
-  :: (DaysInYear y, Fractional a, Ord a)
+  :: (DaysInYear y, RealFrac a)
   => TaxTables y a -> TaxReturnInfo y a -> TaxAssessment a
 assessTax tables info =
   let
