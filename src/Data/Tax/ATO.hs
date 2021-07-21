@@ -336,7 +336,9 @@ assessTax tables info =
     taxable = view income info
     due = getTax (individualTax tables info) taxable
 
-    frankingCredit = foldMap dividendFrankingCredit (view dividends info)
+    frankingCredit =
+      wholeDollars
+      $ foldMap dividendFrankingCredit (view dividends info)
     off =
       view (offsets . spouseContributionOffset) info
       <> view (offsets . foreignTaxOffset) info
@@ -390,20 +392,20 @@ data Dividend a = Dividend
   }
   deriving (Show)
 
-instance HasTaxWithheld Dividend a a where
-  taxWithheld = to dividendTaxWithheld
+instance (RealFrac a) => HasTaxWithheld Dividend a a where
+  taxWithheld = to (roundCents . dividendTaxWithheld)
 
 -- | Calculate the franking credit for a dividend
 --
-dividendFrankingCredit :: (Fractional a) => Dividend a -> Money a
-dividendFrankingCredit d =
+dividendFrankingCredit :: (RealFrac a) => Dividend a -> Money a
+dividendFrankingCredit d = roundCents $
   (getProportion . dividendFrankedPortion) d
   *$ getTax corporateTax (dividendNetPayment d $* (1 / 0.7))
 
 -- | Attributable income
-instance (Fractional a) => HasIncome Dividend a a where
+instance (RealFrac a) => HasIncome Dividend a a where
   income = to $ \d ->
-    dividendNetPayment d
+    roundCents (dividendNetPayment d)
     <> dividendFrankingCredit d
     <> view taxWithheld d
 
