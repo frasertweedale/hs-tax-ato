@@ -43,7 +43,7 @@ module Data.Tax.ATO.Common
   -- * Convenience functions
   , thresholds'
   , marginal'
-  , roundHalfUp
+  , roundCents
   , wholeDollars
   ) where
 
@@ -133,6 +133,10 @@ roundHalfUp x =
 -- | Discard cents
 wholeDollars :: (RealFrac a) => Money a -> Money a
 wholeDollars = fmap (fromInteger . truncate)
+
+-- | Round money to the cent (half-up)
+roundCents :: (RealFrac a) => Money a -> Money a
+roundCents = fmap ((/ 100). fromInteger . roundHalfUp . (* 100))
 
 
 -- | Types that have an income value.
