@@ -23,6 +23,7 @@ import Control.Lens (review)
 
 import Data.Tax
 import Data.Tax.ATO.Common
+import Data.Tax.ATO.PrivateHealthInsuranceRebate
 
 -- | In FY2019 the 37% threshold was increased from $87,000 to $90,000.
 individualIncomeTax :: (Fractional a, Ord a) => Tax (Money a) (Money a)
@@ -52,3 +53,12 @@ tables = TaxTables
   help
   sfss
   (lowIncomeTaxOffset <> lamito)
+  privateHealthInsuranceRebateRates
+
+privateHealthInsuranceRebateRates
+  :: (Fractional a) => PrivateHealthInsuranceRebateRates a
+privateHealthInsuranceRebateRates =
+  [ ( 90000, (0.25415, 0.25059), (0.29651, 0.29236), (0.33887, 0.33413) )
+  , (105000, (0.16943, 0.16706), (0.21180, 0.20883), (0.25415, 0.25059) )
+  , (140000, (0.08471, 0.08352), (0.12707, 0.12529), (0.16943, 0.16706) )
+  ]

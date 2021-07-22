@@ -23,6 +23,7 @@ import Control.Lens (review)
 
 import Data.Tax
 import Data.Tax.ATO.Common
+import Data.Tax.ATO.PrivateHealthInsuranceRebate
 import qualified Data.Tax.ATO.FY.FY2019 as FY2019
 
 help :: (Fractional a, Ord a) => Tax (Money a) (Money a)
@@ -59,3 +60,12 @@ tables = TaxTables
   help
   help
   (lowIncomeTaxOffset <> lamito)
+  privateHealthInsuranceRebateRates
+
+privateHealthInsuranceRebateRates
+  :: (Fractional a) => PrivateHealthInsuranceRebateRates a
+privateHealthInsuranceRebateRates =
+  [ ( 90000, (0.25059, 0.25059), (0.29236, 0.29236), (0.33413, 0.33413) )
+  , (105000, (0.16706, 0.16706), (0.20883, 0.20883), (0.25059, 0.25059) )
+  , (140000, (0.08352, 0.08352), (0.12529, 0.12529), (0.16706, 0.16706) )
+  ]

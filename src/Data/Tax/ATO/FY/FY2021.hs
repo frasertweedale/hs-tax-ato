@@ -23,6 +23,7 @@ import Control.Lens (review)
 
 import Data.Tax
 import Data.Tax.ATO.Common
+import Data.Tax.ATO.PrivateHealthInsuranceRebate
 
 -- | In 2020–21 the 32.5% threshold was increased from $37,000 to
 -- $45,000, and the 37% threshold was increased from $90,000 to
@@ -67,3 +68,12 @@ tables = TaxTables
   help
   help
   (lowIncomeTaxOffset2021 <> lamito)
+  privateHealthInsuranceRebateRates
+
+privateHealthInsuranceRebateRates
+  :: (Fractional a) => PrivateHealthInsuranceRebateRates a
+privateHealthInsuranceRebateRates =
+  [ ( 90000, (0.25059, 0.24608), (0.29236, 0.28710), (0.33413, 0.32812) )
+  , (105000, (0.16706, 0.16405), (0.20883, 0.20507), (0.25059, 0.24608) )
+  , (140000, (0.08352, 0.08202), (0.12529, 0.12303), (0.16706, 0.16405) )
+  ]

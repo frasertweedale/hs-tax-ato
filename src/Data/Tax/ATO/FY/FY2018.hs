@@ -22,6 +22,7 @@ module Data.Tax.ATO.FY.FY2018 (tables) where
 import Control.Lens (review)
 import Data.Tax
 import Data.Tax.ATO.Common
+import Data.Tax.ATO.PrivateHealthInsuranceRebate
 import qualified Data.Tax.ATO.FY.FY2017 as FY2017
 
 help, sfss :: (Fractional a, Ord a) => Tax (Money a) (Money a)
@@ -43,3 +44,12 @@ tables = TaxTables
   help
   sfss
   lowIncomeTaxOffset
+  privateHealthInsuranceRebateRates
+
+privateHealthInsuranceRebateRates
+  :: (Fractional a) => PrivateHealthInsuranceRebateRates a
+privateHealthInsuranceRebateRates =
+  [ ( 90000, (0.25934, 0.25415), (0.30256, 0.29651), (0.34579, 0.33887) )
+  , (105000, (0.17289, 0.16943), (0.21612, 0.21180), (0.25934, 0.25415) )
+  , (140000, (0.08644, 0.08471), (0.12966, 0.12707), (0.17289, 0.16943) )
+  ]

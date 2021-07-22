@@ -1,5 +1,5 @@
 -- This file is part of hs-tax-ato
--- Copyright (C) 2018  Fraser Tweedale
+-- Copyright (C) 2018-2021  Fraser Tweedale
 --
 -- hs-tax-ato is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU Affero General Public License as published by
@@ -33,32 +33,35 @@ and variations based on family income and dependents.
 
 module Data.Tax.ATO
   (
-  -- * Tax returns
-    assessTax
-  , TaxReturnInfo
+  -- * Individual tax returns
+    TaxReturnInfo
   , newTaxReturnInfo
   , newTaxReturnInfoForTables
-  , HasCapitalLossCarryForward(..)
-  , paymentSummaries
   , income
-  , interest
-  , dividends
-  , ess
-  , foreignIncome
-  , cgtEvents
-  , deductions
-  , offsets
-  , mlsExemption
-  , helpBalance
-  , sfssBalance
 
-  -- ** PAYG Payment Summaries
+  -- ** Income
+
+  -- *** PAYG Payment Summaries
   , PaymentSummary(..)
+  , paymentSummaries
   , ABN
 
-  -- ** Employee share schemes
+  -- *** Interest
+  , interest
+
+  -- *** Dividends and franking credits
+  , Dividend(..)
+  , dividends
+  , dividendFrankingCredit
+
+  -- *** Capital gains tax (CGT)
+  , HasCapitalLossCarryForward(..)
+  , cgtEvents
+
+  -- *** Employee share schemes
   , ESSStatement
   , newESSStatement
+  , ess
   , essTaxedUpfrontReduction
   , essTaxedUpfrontNoReduction
   , essDeferral
@@ -66,25 +69,52 @@ module Data.Tax.ATO
   , essTFNAmounts
   , essForeignSourceDiscounts
 
-  -- ** Dividends and franking credits
-  , Dividend(..)
-  , dividendFrankingCredit
+  -- *** Foreign income
+  , foreignIncome
+
+  -- ** Medicare Levy Surcharge and Private Health Insurance
+  , mlsExemption
+  , privateHealthInsurancePolicyDetails
+
+  -- ** Student loan balances
+  , helpBalance
+  , sfssBalance
+
+  -- ** Spouse details
+  , SpouseDetails
+  , spouseDetails
+  , newSpouseDetails
+  , spouseTaxableIncome
+
+  -- ** Income Tests
+  , IncomeTests
+  , incomeTests
+  , newIncomeTests
+  , taxFreeGovernmentPensionsOrBenefits
+  , targetForeignIncome
+  , childSupportPaid
+  , dependentChildren
+
+  -- ** Deductions
 
   -- ** Tax offsets
+  , deductions
   , Offsets
+  , offsets
   , spouseContributionOffset
   , foreignTaxOffset
 
-  -- ** Tax assessment
+  -- ** Assessing tax
   , TaxAssessment
+  , assessTax
+  , taxBalance
   , taxDue
   , medicareLevyDue
   , taxCreditsAndOffsets
-  , taxBalance
   , taxCGTAssessment
+  , privateHealthInsuranceRebateAdjustment
 
-  -- * Tax computations
-  , individualTax
+  -- * Corporate tax
   , corporateTax
 
   -- * Miscellaneous
@@ -94,14 +124,18 @@ module Data.Tax.ATO
   , getProportion
   , proportion
   , module Data.Tax
+  , module Data.Tax.ATO.PrivateHealthInsuranceRebate
+  , module Data.Tax.ATO.Rounding
   ) where
 
-import Control.Lens (Getter, Lens', lens, to, view)
+import Control.Lens (Getter, Lens', foldOf, lens, to, view)
 
 import Data.Tax
 import Data.Tax.ATO.CGT
 import Data.Tax.ATO.Common
 import Data.Tax.ATO.Days
+import Data.Tax.ATO.PrivateHealthInsuranceRebate
+import Data.Tax.ATO.Rounding
 
 -- | Data that can have an amount of tax withheld
 class HasTaxWithheld a b c where
@@ -111,6 +145,46 @@ instance (Foldable t, HasTaxWithheld x a a, Num a)
             => HasTaxWithheld t (x a) a where
   taxWithheld = to (foldMap (view taxWithheld))
 
+-- TODO part year spouse
+data SpouseDetails a = SpouseDetails
+  { _spouseTaxableIncome :: Money a
+  -- TODO other fields
+  }
+
+newSpouseDetails :: (Num a) => SpouseDetails a
+newSpouseDetails = SpouseDetails mempty
+
+spouseTaxableIncome :: Lens' (SpouseDetails a) (Money a)
+spouseTaxableIncome =
+  lens _spouseTaxableIncome (\s b -> s { _spouseTaxableIncome = b })
+
+data IncomeTests a = IncomeTests
+  { _govBenefit :: Money a
+  , _targetForeignIncome :: Money a
+  , _childSupportPaid :: Money a
+  , _dependents :: Integer
+  }
+
+newIncomeTests :: (Num a) => IncomeTests a
+newIncomeTests = IncomeTests mempty mempty mempty 0
+
+taxFreeGovernmentPensionsOrBenefits :: Lens' (IncomeTests a) (Money a)
+taxFreeGovernmentPensionsOrBenefits =
+  lens _govBenefit (\s b -> s { _govBenefit = b })
+
+targetForeignIncome :: Lens' (IncomeTests a) (Money a)
+targetForeignIncome =
+  lens _targetForeignIncome (\s b -> s { _targetForeignIncome = b })
+
+childSupportPaid :: Lens' (IncomeTests a) (Money a)
+childSupportPaid =
+  lens _childSupportPaid (\s b -> s { _childSupportPaid = b })
+
+dependentChildren :: Lens' (IncomeTests a) Integer
+dependentChildren =
+  lens _dependents (\s b -> s { _dependents = b })
+
+
 -- | Individual tax return information.
 --
 -- Use 'newTaxReturnInfo' to construct.  Alternatively,
@@ -119,29 +193,36 @@ instance (Foldable t, HasTaxWithheld x a a, Num a)
 --
 -- The following lenses are available:
 --
--- +--------------------+----------------------------------+
--- | 'mlsExemption'     | Medicare levy exemption          |
--- +--------------------+----------------------------------+
--- | 'helpBalance'      | HELP account balance             |
--- +--------------------+----------------------------------+
--- | 'sfssBalance'      | SFSS account balance             |
--- +--------------------+----------------------------------+
--- | 'paymentSummaries' | PAYG payment summaries           |
--- +--------------------+----------------------------------+
--- | 'interest'         | Interest data                    |
--- +--------------------+----------------------------------+
--- | 'dividends'        | Dividend data                    |
--- +--------------------+----------------------------------+
--- | 'ess'              | Employee Share Scheme statement  |
--- +--------------------+----------------------------------+
--- | 'foreignIncome'    | Foreign income                   |
--- +--------------------+----------------------------------+
--- | 'cgtEvents'        | Capital gains and losses         |
--- +--------------------+----------------------------------+
--- | 'deductions'       | Deductions                       |
--- +--------------------+----------------------------------+
--- | 'offsets'          | Tax offsets                      |
--- +--------------------+----------------------------------+
+-- +---------------------------------------+----------------------------------+
+-- | 'mlsExemption'                        | Medicare levy exemption          |
+-- +---------------------------------------+----------------------------------+
+-- | 'helpBalance'                         | HELP account balance             |
+-- +---------------------------------------+----------------------------------+
+-- | 'sfssBalance'                         | SFSS account balance             |
+-- +---------------------------------------+----------------------------------+
+-- | 'paymentSummaries'                    | PAYG payment summaries           |
+-- +---------------------------------------+----------------------------------+
+-- | 'interest'                            | Interest data                    |
+-- +---------------------------------------+----------------------------------+
+-- | 'dividends'                           | Dividend data                    |
+-- +---------------------------------------+----------------------------------+
+-- | 'ess'                                 | Employee Share Scheme statement  |
+-- +---------------------------------------+----------------------------------+
+-- | 'foreignIncome'                       | Foreign income                   |
+-- +---------------------------------------+----------------------------------+
+-- | 'cgtEvents'                           | Capital gains and losses         |
+-- +---------------------------------------+----------------------------------+
+-- | 'deductions'                          | Deductions                       |
+-- +---------------------------------------+----------------------------------+
+-- | 'offsets'                             | Tax offsets                      |
+-- +---------------------------------------+----------------------------------+
+-- | 'privateHealthInsurancePolicyDetails' | Private health insurance         |
+-- |                                       | policy details                   |
+-- +---------------------------------------+----------------------------------+
+-- | 'spouseDetails'                       | Spouse Details (or @Nothing@)    |
+-- +---------------------------------------+----------------------------------+
+-- | 'incomeTests'                         | Income Tests                     |
+-- +---------------------------------------+----------------------------------+
 --
 data TaxReturnInfo y a = TaxReturnInfo
   { _mlsExemption :: Days y
@@ -156,6 +237,9 @@ data TaxReturnInfo y a = TaxReturnInfo
   , _deductions :: Money a
   , _offsets :: Offsets a
   , _triCapitalLossCarryForward :: Money a
+  , _phi :: [PrivateHealthInsurancePolicyDetail a]
+  , _spouseDetails :: Maybe (SpouseDetails a)
+  , _incomeTests :: IncomeTests a
   }
 
 -- | Construct a new 'TaxReturnInfo'.
@@ -182,6 +266,9 @@ newTaxReturnInfo = TaxReturnInfo
   mempty -- deductions
   mempty -- offsets
   mempty -- cap loss carry forward
+  mempty -- private health insurance policy details
+  Nothing -- spouse details
+  newIncomeTests
 
 -- | Construct a 'TaxReturnInfo' per 'newTaxReturnInfo',
 -- coercing the type parameters to match the 'TaxTables'
@@ -229,6 +316,16 @@ deductions = lens _deductions (\s b -> s { _deductions = b })
 offsets :: Lens' (TaxReturnInfo y a) (Offsets a)
 offsets = lens _offsets (\s b -> s { _offsets = b })
 
+privateHealthInsurancePolicyDetails
+  :: Lens' (TaxReturnInfo y a) [PrivateHealthInsurancePolicyDetail a]
+privateHealthInsurancePolicyDetails = lens _phi (\s b -> s { _phi = b })
+
+spouseDetails :: Lens' (TaxReturnInfo y a) (Maybe (SpouseDetails a))
+spouseDetails = lens _spouseDetails (\s b -> s { _spouseDetails = b })
+
+incomeTests :: Lens' (TaxReturnInfo y a) (IncomeTests a)
+incomeTests = lens _incomeTests (\s b -> s { _incomeTests = b })
+
 
 -- | A tax assessment.  Use 'assessTax' to compute a
 -- @TaxAssessment@.
@@ -239,6 +336,7 @@ data TaxAssessment a = TaxAssessment
   , _taxWithheld :: Money a
   , _taxCreditsAndOffsets :: Money a
   , _taCGTAssessment :: CGTAssessment a
+  , _phiAdj :: Money a
   }
 
 -- | Taxable income
@@ -260,6 +358,9 @@ taxCreditsAndOffsets = to _taxCreditsAndOffsets
 taxCGTAssessment :: Lens' (TaxAssessment a) (CGTAssessment a)
 taxCGTAssessment = lens _taCGTAssessment (\s b -> s { _taCGTAssessment = b })
 
+privateHealthInsuranceRebateAdjustment :: Lens' (TaxAssessment a) (Money a)
+privateHealthInsuranceRebateAdjustment = lens _phiAdj (\s b -> s { _phiAdj = b })
+
 -- | What is the balance of the assessment?  Positive means a
 -- refund (tax withheld exceeds obligation), negative means a bill.
 taxBalance :: Num a => Getter (TaxAssessment a) (Money a)
@@ -267,6 +368,7 @@ taxBalance = to $ \a ->
   view taxWithheld a
   $-$ view taxDue a
   $-$ view medicareLevyDue a
+  $-$ view privateHealthInsuranceRebateAdjustment a
   $+$ view taxCreditsAndOffsets a
 
 instance (Num a, Eq a) => HasCapitalLossCarryForward TaxAssessment a where
@@ -281,12 +383,12 @@ individualTax
   => TaxTables y a
   -> TaxReturnInfo y a
   -> Tax (Money a) (Money a)
-individualTax (TaxTables tax _ml _mls help sfss more) info =
+individualTax table info =
     greaterOf mempty $
-      tax
-      <> limit (view helpBalance info) help
-      <> limit (view sfssBalance info) sfss
-      <> more
+      ttIndividualIncomeTax table
+      <> limit (view helpBalance info) (ttHelp table)
+      <> limit (view sfssBalance info) (ttSfss table)
+      <> ttAdditional table
 
 -- | Medicare levy + surcharge
 medicareLevyTax
@@ -294,8 +396,10 @@ medicareLevyTax
   => TaxTables y a
   -> TaxReturnInfo y a
   -> Tax (Money a) (Money a)    -- grand unified individual income tax
-medicareLevyTax (TaxTables _tax ml mls _help _sfss _more) info =
+medicareLevyTax table info =
   let
+    ml = ttMedicareLevy table
+    mls = ttMedicareLevySurcharge table
     mlsFrac = 1 - getFraction (view mlsExemption info)
   in
     -- TODO medicare levy exemption
@@ -336,6 +440,22 @@ assessTax tables info =
     taxable = view income info
     due = getTax (individualTax tables info) taxable
 
+    incomeForSurchargePurposes =
+      taxable
+      <> mempty -- TODO reportable fringe benefits
+      <> mempty -- TODO net investment losses
+      <> foldOf (paymentSummaries . traverse . to reportableEmployerSuperannuationContributions) info
+
+    spouseIncomeForSurchargePurposes =
+      fmap (view spouseTaxableIncome) (view spouseDetails info)
+
+    phiAdj = assessExcessPrivateHealthRebate
+      incomeForSurchargePurposes
+      spouseIncomeForSurchargePurposes
+      (view (incomeTests . dependentChildren) info)
+      (ttPHIRebateRates tables)
+      (view privateHealthInsurancePolicyDetails info)
+
     frankingCredit =
       wholeDollars
       $ foldMap dividendFrankingCredit (view dividends info)
@@ -350,6 +470,7 @@ assessTax tables info =
       (view taxWithheld info)
       (frankingCredit <> off)
       cg
+      phiAdj
 
 -- | Australian Business Number
 type ABN = String

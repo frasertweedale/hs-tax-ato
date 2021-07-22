@@ -22,6 +22,7 @@ module Data.Tax.ATO.FY.FY2017 (tables, individualIncomeTax) where
 import Control.Lens (review)
 import Data.Tax
 import Data.Tax.ATO.Common
+import Data.Tax.ATO.PrivateHealthInsuranceRebate
 
 -- | In FY2017 the 37% threshold was raised from $80,000 to $87,000
 --
@@ -55,3 +56,12 @@ tables = TaxTables
   help
   sfss
   lowIncomeTaxOffset
+  privateHealthInsuranceRebateRates
+
+privateHealthInsuranceRebateRates
+  :: (Fractional a) => PrivateHealthInsuranceRebateRates a
+privateHealthInsuranceRebateRates =
+  [ ( 90000, (0.26791, 0.25934), (0.31256, 0.30256), (0.35722, 0.34579) )
+  , (105000, (0.17861, 0.17289), (0.22326, 0.21612), (0.26791, 0.25934) )
+  , (140000, (0.08930, 0.08644), (0.13395, 0.12966), (0.17861, 0.17289) )
+  ]

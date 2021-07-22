@@ -43,14 +43,13 @@ module Data.Tax.ATO.Common
   -- * Convenience functions
   , thresholds'
   , marginal'
-  , roundCents
-  , wholeDollars
   ) where
 
 import Control.Lens (Getter, review, to, view)
 import Data.Bifunctor (first)
 
 import Data.Tax
+import Data.Tax.ATO.PrivateHealthInsuranceRebate
 
 -- | A set of tax tables for a particular financial year
 data TaxTables y a = TaxTables
@@ -61,6 +60,7 @@ data TaxTables y a = TaxTables
   , ttSfss :: Tax (Money a) (Money a)
   , ttAdditional :: Tax (Money a) (Money a)
   -- ^ Additional taxes and offsets that apply at EOY
+  , ttPHIRebateRates :: PrivateHealthInsuranceRebateRates a
   }
 
 -- | The Medicare levy, incorporating the Medicare levy reduction.
@@ -118,25 +118,6 @@ thresholds' = thresholds . fmap (first (review money))
 -- ^ Convenience wrapper for 'thresholds'.  Turns the thresholds into 'Money'
 marginal' = marginal . fmap (first (review money))
 -- ^ Convenience wrapper for 'marginal'.  Turns the margins into 'Money'
-
--- | Round half up
-roundHalfUp :: (RealFrac a, Integral b) => a -> b
-roundHalfUp x =
-  let
-    (n, r) = properFraction x
-  in
-    case signum (abs r - 0.5) of
-      -1 -> n
-      0 -> if r < 0 then n else n + 1
-      _ -> if r < 0 then n - 1 else n + 1
-
--- | Discard cents
-wholeDollars :: (RealFrac a) => Money a -> Money a
-wholeDollars = fmap (fromInteger . truncate)
-
--- | Round money to the cent (half-up)
-roundCents :: (RealFrac a) => Money a -> Money a
-roundCents = fmap ((/ 100). fromInteger . roundHalfUp . (* 100))
 
 
 -- | Types that have an income value.
