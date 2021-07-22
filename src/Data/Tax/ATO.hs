@@ -97,8 +97,6 @@ module Data.Tax.ATO
   ) where
 
 import Control.Lens (Getter, Lens', lens, to, view)
-import Data.Semigroup (Semigroup(..))
-import Data.Monoid (Monoid(..))
 
 import Data.Tax
 import Data.Tax.ATO.CGT

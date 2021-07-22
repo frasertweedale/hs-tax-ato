@@ -53,7 +53,6 @@ module Data.Tax.ATO.CGT
 
 import Data.Foldable (toList)
 import Data.List (partition)
-import Data.Semigroup ((<>))
 import Numeric.Natural (Natural)
 
 import Control.Lens (Getter, Lens', both, lens, over, to, view)
