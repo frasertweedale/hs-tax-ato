@@ -72,6 +72,7 @@ data CGTEvent a = CGTEvent
   , capitalCosts :: Money a
   , ownershipCosts :: Money a
   }
+  deriving (Show)
 
 reducedCostBase :: Num a => CGTEvent a -> Money a
 reducedCostBase event =
