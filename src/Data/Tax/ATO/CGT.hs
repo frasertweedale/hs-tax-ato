@@ -53,7 +53,6 @@ module Data.Tax.ATO.CGT
 
 import Data.Foldable (toList)
 import Data.List (partition)
-import Numeric.Natural (Natural)
 
 import Control.Lens (Getter, Lens', both, lens, over, to, view)
 import Data.Time.Calendar (Day, diffDays)
@@ -63,7 +62,7 @@ import Data.Tax
 --
 data CGTEvent a = CGTEvent
   { assetDesc :: String
-  , units :: Natural
+  , units :: a
   , acquisitionDate :: Day
   , acquisitionPrice :: Money a
   , acquisitionCosts :: Money a
@@ -74,12 +73,9 @@ data CGTEvent a = CGTEvent
   , ownershipCosts :: Money a
   }
 
-numUnits :: Num b => CGTEvent a -> b
-numUnits = fromIntegral . units
-
 reducedCostBase :: Num a => CGTEvent a -> Money a
 reducedCostBase event =
-  (numUnits event *$ acquisitionPrice event)
+  (units event *$ acquisitionPrice event)
   $+$ acquisitionCosts event
   $+$ disposalCosts event
   $+$ capitalCosts event
@@ -89,14 +85,14 @@ costBase event = reducedCostBase event $+$ ownershipCosts event
 
 capitalGain' :: (Num a, Ord a) => CGTEvent a -> Money a
 capitalGain' event =
-  max mempty (numUnits event *$ disposalPrice event $-$ costBase event)
+  max mempty (units event *$ disposalPrice event $-$ costBase event)
 
 -- | The capital loss as a /non-negative/ amount.
 -- /$0/ if the event is not a loss.
 --
 capitalLoss :: (Num a, Ord a) => CGTEvent a -> Money a
 capitalLoss event = over money abs $
-  min mempty (numUnits event *$ disposalPrice event $-$ reducedCostBase event)
+  min mempty (units event *$ disposalPrice event $-$ reducedCostBase event)
 
 -- | Whether the CGT event is a capital gain.  /Not the opposite
 -- of 'isCapitalLoss'!/  A CGT event may be neither a loss nor a
