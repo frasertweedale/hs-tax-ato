@@ -48,6 +48,7 @@ module Data.Tax.ATO.CGT
   , capitalLoss
   , isCapitalGain
   , isCapitalLoss
+  , discountApplicable
   , netCapitalGainOrLoss
   ) where
 
