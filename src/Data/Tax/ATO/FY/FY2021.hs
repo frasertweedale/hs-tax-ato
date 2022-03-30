@@ -57,9 +57,6 @@ help = thresholds'
   , (136740, 0.005)
   ]
 
--- | NOTE: Medicare levy thresholds have not yet been announced.
--- Re-using thresholds from FY2020.
---
 tables :: (Ord a, Fractional a) => TaxTables 2021 a
 tables = TaxTables
   individualIncomeTax
