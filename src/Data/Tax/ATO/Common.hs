@@ -98,7 +98,7 @@ lowIncomeTaxOffset2021 =
     <> above (review money 37500) 0.05
     <> above (review money 45000) (-0.035)
 
--- | Low and middle income tax offset. FY2019, 2020, 2021, 2022.
+-- | Low and middle income tax offset. FY2019, 2020, 2021.
 --
 lamito :: (Fractional a, Ord a) => Tax (Money a) (Money a)
 lamito = limit mempty $

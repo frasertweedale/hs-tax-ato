@@ -17,7 +17,7 @@
 {-# LANGUAGE DataKinds #-}
 
 -- | Tax tables for 2020–21 financial year.
-module Data.Tax.ATO.FY.FY2021 (tables) where
+module Data.Tax.ATO.FY.FY2021 (tables, individualIncomeTax) where
 
 import Control.Lens (review)
 
