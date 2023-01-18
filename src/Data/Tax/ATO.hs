@@ -541,7 +541,7 @@ instance Num a => Semigroup (Offsets a) where
 
 instance Num a => Monoid (Offsets a) where
   mempty = Offsets mempty mempty
-  Offsets a b `mappend` Offsets a' b' = Offsets (a `mappend` a') (b `mappend` b')
+  mappend = (<>)
 
 -- | Spouse contribution offset.  Maximum of /$540/ (not enforced).
 spouseContributionOffset :: Lens' (Offsets a) (Money a)
@@ -560,8 +560,7 @@ instance (Num a) => Semigroup (GrossAndWithheld a) where
 
 instance (Num a) => Monoid (GrossAndWithheld a) where
   mempty = GrossAndWithheld mempty mempty
-  GrossAndWithheld a b `mappend` GrossAndWithheld a' b' =
-    GrossAndWithheld (a `mappend` a') (b `mappend` b')
+  mappend = (<>)
 
 instance HasIncome GrossAndWithheld a a where
   income = to $ \(GrossAndWithheld a _) -> a
