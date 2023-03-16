@@ -1,5 +1,5 @@
 name:                tax-ato
-version:             0.1.0.0
+version:             2022.1
 synopsis:            Tax types and computations for Australia
 description:
   This library provides types and tax computations for tax
