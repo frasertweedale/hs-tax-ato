@@ -15,6 +15,8 @@ copyright:           Copyright (C) 2018-2023 Fraser Tweedale
 category:            Finance
 build-type:          Simple
 tested-with:         GHC ==8.10.7 || ==9.0.2 || ==9.2.7 || ==9.4.4 || ==9.6.1
+extra-source-files:
+  .hlint.yaml
 
 homepage:            https://github.com/frasertweedale/hs-tax-ato
 bug-reports:         https://github.com/frasertweedale/hs-tax-ato/issues

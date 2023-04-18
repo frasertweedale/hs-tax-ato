@@ -46,9 +46,9 @@ type Year = Nat
 type DaysInYear = KnownNat
 
 daysInYear :: KnownNat n => Proxy n -> Integer
-daysInYear proxy = case isLeapYear (natVal proxy) of
-  False -> 365
-  True  -> 366
+daysInYear proxy
+  | isLeapYear (natVal proxy) = 366
+  | otherwise                 = 365
 
 -- | Some number of days in a year.  Use 'days' to construct.
 newtype Days (n :: Year) = Days

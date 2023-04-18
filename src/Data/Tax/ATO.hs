@@ -146,7 +146,7 @@ instance (Foldable t, HasTaxWithheld x a a, Num a)
   taxWithheld = to (foldMap (view taxWithheld))
 
 -- TODO part year spouse
-data SpouseDetails a = SpouseDetails
+newtype SpouseDetails a = SpouseDetails
   { _spouseTaxableIncome :: Money a
   -- TODO other fields
   }
@@ -442,8 +442,8 @@ assessTax tables info =
 
     incomeForSurchargePurposes =
       taxable
-      <> mempty -- TODO reportable fringe benefits
-      <> mempty -- TODO net investment losses
+      -- TODO reportable fringe benefits
+      -- TODO net investment losses
       <> foldOf (paymentSummaries . traverse . to reportableEmployerSuperannuationContributions) info
 
     spouseIncomeForSurchargePurposes =
