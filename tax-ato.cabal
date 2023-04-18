@@ -1,3 +1,4 @@
+cabal-version:       2.2
 name:                tax-ato
 version:             2022.1
 synopsis:            Tax types and computations for Australia
@@ -6,16 +7,14 @@ description:
   in Australia (ATO = /Australian Taxation Office/).  It is
   based on the <https://hackage.haskell.org/package/tax tax>
   library.
-license:             AGPL-3
+license:             AGPL-3.0-or-later
 license-file:        LICENSE
 author:              Fraser Tweedale
 maintainer:          frase@frase.id.au
-copyright:           Copyright (C) 2018 Fraser Tweedale
+copyright:           Copyright (C) 2018-2023 Fraser Tweedale
 category:            Finance
 build-type:          Simple
-cabal-version:       >=1.10
-tested-with:
-  GHC==7.10.3, GHC==8.0.2, GHC==8.2.1, GHC==8.4.3, GHC==8.6.1
+tested-with:         GHC ==8.10.7 || ==9.0.2 || ==9.2.7 || ==9.4.4 || ==9.6.1
 
 homepage:            https://github.com/frasertweedale/hs-tax-ato
 bug-reports:         https://github.com/frasertweedale/hs-tax-ato/issues
@@ -23,7 +22,39 @@ source-repository head
   type: git
   location: https://github.com/frasertweedale/hs-tax-ato.git
 
+common common
+  default-language: Haskell2010
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Werror=missing-methods
+    -Widentities
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wmissing-export-lists
+    -Wnoncanonical-monad-instances
+    -Wpartial-fields
+    -Wredundant-constraints
+    -Wunused-packages
+    -fhide-source-paths
+  if impl(ghc >= 9.0)
+    ghc-options:
+      -Winvalid-haddock
+      -Werror=unicode-bidirectional-format-characters
+  if impl(ghc >= 9.2)
+    ghc-options:
+      -Wimplicit-lift
+      -Woperator-whitespace
+      -Wredundant-bang-patterns
+  if impl(ghc >= 9.4)
+    ghc-options:
+      -Wredundant-strictness-flags
+  build-depends:
+    base >= 4.14 && < 5
+
 library
+  import: common
+  hs-source-dirs:      src
   exposed-modules:
     Data.Tax.ATO
     Data.Tax.ATO.CGT
@@ -37,15 +68,7 @@ library
     Data.Tax.ATO.FY.FY2020
     Data.Tax.ATO.FY.FY2021
     Data.Tax.ATO.FY.FY2022
-  -- other-modules:
-  -- other-extensions:
   build-depends:
-    base >= 4.8 && < 5
     , lens >= 4.12
     , time >= 1.5
     , tax >= 0.2
-  hs-source-dirs:      src
-  default-language:    Haskell2010
-  ghc-options: -Wall
-  if impl(ghc >= 8)
-    ghc-options: -Wredundant-constraints
