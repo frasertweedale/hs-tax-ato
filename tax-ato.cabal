@@ -70,6 +70,7 @@ library
     Data.Tax.ATO.FY.FY2020
     Data.Tax.ATO.FY.FY2021
     Data.Tax.ATO.FY.FY2022
+    Data.Tax.ATO.FY.FY2023
   build-depends:
     , lens >= 4.12
     , time >= 1.5
