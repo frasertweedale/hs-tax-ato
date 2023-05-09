@@ -55,8 +55,7 @@ tables = TaxTables
   help
   help
 
-  -- TODO will LMITO revert to previous definition?
-  (ttAdditional FY2022.tables)
+  lowIncomeTaxOffset2021 -- LMITO ceased
 
   -- https://www.health.gov.au/news/phi-circulars/phi-1023-private-health-insurance-rebate-adjustment-factor-effective-1-april-2023
   (ttPHIRebateRates FY2022.tables)
