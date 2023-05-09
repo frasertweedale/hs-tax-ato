@@ -49,9 +49,7 @@ tables :: (Ord a, Fractional a) => TaxTables 2023 a
 tables = TaxTables
   (ttIndividualIncomeTax FY2022.tables)
 
-  -- TODO awaiting federal budget for updated
-  -- lower shade-in threshold
-  (medicareLevy (Money 23365))
+  (medicareLevy (Money 24276))
 
   medicareLevySurcharge
   help
