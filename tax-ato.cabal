@@ -1,6 +1,6 @@
 cabal-version:       2.2
 name:                tax-ato
-version:             2022.1
+version:             2023.1
 synopsis:            Tax types and computations for Australia
 description:
   This library provides types and tax computations for tax
