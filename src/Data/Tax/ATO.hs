@@ -96,13 +96,14 @@ module Data.Tax.ATO
   , dependentChildren
 
   -- ** Deductions
+  , deductions
 
   -- ** Tax offsets
-  , deductions
   , Offsets
   , offsets
   , spouseContributionOffset
   , foreignTaxOffset
+  , paygInstalments
 
   -- ** Assessing tax
   , TaxAssessment
@@ -462,6 +463,7 @@ assessTax tables info =
     off =
       view (offsets . spouseContributionOffset) info
       <> view (offsets . foreignTaxOffset) info
+      <> view (offsets . paygInstalments) info
   in
     TaxAssessment
       taxable
@@ -531,16 +533,28 @@ instance (RealFrac a) => HasIncome Dividend a a where
     <> view taxWithheld d
 
 -- | Tax offsets that individuals can claim
+--
+-- The following lenses are available:
+--
+-- +---------------------------------------+----------------------------------+
+-- | 'spouseContributionOffset'            | Spouse super contribution        |
+-- +---------------------------------------+----------------------------------+
+-- | 'foreignTaxOffset'                    | Foreign income tax offset        |
+-- +---------------------------------------+----------------------------------+
+-- | 'paygInstalments'                     | PAYG Instalments                 |
+-- +---------------------------------------+----------------------------------+
+--
 data Offsets a = Offsets
   { _spouseOffset :: Money a
   , _foreignTaxOffset :: Money a
+  , _paygInstalments :: Money a
   }
 
 instance Num a => Semigroup (Offsets a) where
-  Offsets a b <> Offsets a' b' = Offsets (a <> a') (b <> b')
+  Offsets a b c <> Offsets a' b' c' = Offsets (a <> a') (b <> b') (c <> c')
 
 instance Num a => Monoid (Offsets a) where
-  mempty = Offsets mempty mempty
+  mempty = Offsets mempty mempty mempty
   mappend = (<>)
 
 -- | Spouse contribution offset.  Maximum of /$540/ (not enforced).
@@ -550,6 +564,9 @@ spouseContributionOffset = lens _spouseOffset (\s b -> s { _spouseOffset = b })
 -- | Offset for tax paid on foreign income.
 foreignTaxOffset :: Lens' (Offsets a) (Money a)
 foreignTaxOffset = lens _foreignTaxOffset (\s b -> s { _foreignTaxOffset = b })
+
+paygInstalments :: Lens' (Offsets a) (Money a)
+paygInstalments = lens _paygInstalments (\s b -> s { _paygInstalments = b })
 
 -- | A gross income (first argument) and amount of tax withheld (second argument)
 data GrossAndWithheld a = GrossAndWithheld (Money a) (Money a)
