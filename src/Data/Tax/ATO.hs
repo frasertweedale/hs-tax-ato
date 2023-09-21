@@ -96,7 +96,24 @@ module Data.Tax.ATO
   , dependentChildren
 
   -- ** Deductions
+  , Deductions
   , deductions
+  , workRelatedCarExpenses
+  , workRelatedTravelExpenses
+  , workRelatedClothingLaundryAndDryCleaningExpenses
+  , workRelatedSelfEducationExpenses
+  , otherWorkRelatedExpenses
+  , lowValuePoolDeduction
+  , interestDeductions
+  , dividendDeductions
+  , giftsOrDonations
+  , costOfManagingTaxAffairs
+  , deductibleAmountOfUndeductedPurchasePriceOfAForeignPensionOrAnnuity
+  , personalSuperannuationContributions
+  , deductionForProjectPool
+  , forestryManagedInvestmentSchemeDeduction
+  , otherDeductions
+  , foreignIncomeDeductions
 
   -- ** Tax offsets
   , Offsets
@@ -567,6 +584,141 @@ foreignTaxOffset = lens _foreignTaxOffset (\s b -> s { _foreignTaxOffset = b })
 
 paygInstalments :: Lens' (Offsets a) (Money a)
 paygInstalments = lens _paygInstalments (\s b -> s { _paygInstalments = b })
+
+
+-- | Deductions that individuals can claim.
+--
+-- The only "special case" field is 'foreignIncomeDeductions', which is
+-- the aggregate amount of /other/ deductions that pertains to foreign
+-- income.  It is used only for calculating the Foreign Income Tax Offset
+-- Limit.
+--
+data Deductions a = Deductions
+  { _workRelatedCarExpenses :: Money a
+  , _workRelatedTravelExpenses :: Money a
+  , _workRelatedClothingLaundryAndDryCleaningExpenses :: Money a
+  , _workRelatedSelfEducationExpenses :: Money a
+  , _otherWorkRelatedExpenses :: Money a
+  , _lowValuePoolDeduction :: Money a
+  , _interestDeductions :: Money a
+  , _dividendDeductions :: Money a
+  , _giftsOrDonations :: Money a
+  , _costOfManagingTaxAffairs :: Money a
+  , _deductibleAmountOfUndeductedPurchasePriceOfAForeignPensionOrAnnuity :: Money a
+  , _personalSuperannuationContributions :: Money a
+  , _deductionForProjectPool :: Money a
+  , _forestryManagedInvestmentSchemeDeduction :: Money a
+  , _otherDeductions :: Money a
+  , _foreignIncomeDeductions :: Money a
+  }
+
+instance Num a => Semigroup (Deductions a) where
+  Deductions a b c d e f g h i j k l m n o p
+    <> Deductions a' b' c' d' e' f' g' h' i' j' k' l' m' n' o' p'
+      = Deductions (a <> a') (b <> b') (c <> c') (d <> d') (e <> e') (f <> f') (g <> g') (h <> h')
+                   (i <> i') (j <> j') (k <> k') (l <> l') (m <> m') (n <> n') (o <> o') (p <> p')
+
+instance Num a => Monoid (Deductions a) where
+  mempty = Deductions mempty mempty mempty mempty mempty mempty mempty mempty
+                      mempty mempty mempty mempty mempty mempty mempty mempty
+
+-- | __D1__ Work-related car expenses
+workRelatedCarExpenses :: Lens' (Deductions a) (Money a)
+workRelatedCarExpenses =
+  lens _workRelatedCarExpenses (\s b -> s { _workRelatedCarExpenses = b })
+
+-- | __D2__ Work-related travel expenses
+workRelatedTravelExpenses :: Lens' (Deductions a) (Money a)
+workRelatedTravelExpenses =
+  lens _workRelatedTravelExpenses (\s b -> s { _workRelatedTravelExpenses = b })
+
+-- | __D3__ Work-related clothing, laundry and dry-cleaning expenses
+workRelatedClothingLaundryAndDryCleaningExpenses :: Lens' (Deductions a) (Money a)
+workRelatedClothingLaundryAndDryCleaningExpenses =
+  lens
+    _workRelatedClothingLaundryAndDryCleaningExpenses
+    (\s b -> s { _workRelatedClothingLaundryAndDryCleaningExpenses = b })
+
+-- | __D4__ Work-related self-education expenses
+workRelatedSelfEducationExpenses :: Lens' (Deductions a) (Money a)
+workRelatedSelfEducationExpenses =
+  lens _workRelatedSelfEducationExpenses (\s b -> s { _workRelatedSelfEducationExpenses = b })
+
+-- | __D5__ Other work-related expenses
+otherWorkRelatedExpenses :: Lens' (Deductions a) (Money a)
+otherWorkRelatedExpenses =
+  lens _otherWorkRelatedExpenses (\s b -> s { _otherWorkRelatedExpenses = b })
+
+-- | __D6__ Low-value pool deduction
+lowValuePoolDeduction :: Lens' (Deductions a) (Money a)
+lowValuePoolDeduction =
+  lens _lowValuePoolDeduction (\s b -> s { _lowValuePoolDeduction = b })
+
+-- | __D7__ Interest deductions
+interestDeductions :: Lens' (Deductions a) (Money a)
+interestDeductions =
+  lens _interestDeductions (\s b -> s { _interestDeductions = b })
+
+-- | __D8__ Dividend deductions
+dividendDeductions :: Lens' (Deductions a) (Money a)
+dividendDeductions =
+  lens _dividendDeductions (\s b -> s { _dividendDeductions = b })
+
+-- | __D9__ Gifts or donations
+giftsOrDonations :: Lens' (Deductions a) (Money a)
+giftsOrDonations =
+  lens _giftsOrDonations (\s b -> s { _giftsOrDonations = b })
+
+-- | __D10__ Cost of managing tax affairs
+costOfManagingTaxAffairs :: Lens' (Deductions a) (Money a)
+costOfManagingTaxAffairs =
+  lens _costOfManagingTaxAffairs (\s b -> s { _costOfManagingTaxAffairs = b })
+
+-- | __D11__ Deductible amount of undeducted purchase price of a foreign pension or annuity
+deductibleAmountOfUndeductedPurchasePriceOfAForeignPensionOrAnnuity :: Lens' (Deductions a) (Money a)
+deductibleAmountOfUndeductedPurchasePriceOfAForeignPensionOrAnnuity =
+  lens
+    _deductibleAmountOfUndeductedPurchasePriceOfAForeignPensionOrAnnuity 
+    (\s b -> s { _deductibleAmountOfUndeductedPurchasePriceOfAForeignPensionOrAnnuity = b })
+
+-- | __D12__ Personal superannuation contributions
+personalSuperannuationContributions :: Lens' (Deductions a) (Money a)
+personalSuperannuationContributions =
+  lens _personalSuperannuationContributions (\s b -> s { _personalSuperannuationContributions = b })
+
+-- | __D13__ Deduction for project pool
+deductionForProjectPool :: Lens' (Deductions a) (Money a)
+deductionForProjectPool =
+  lens _deductionForProjectPool (\s b -> s { _deductionForProjectPool = b })
+
+-- | __D14__ Forestry managed investment scheme deduction
+forestryManagedInvestmentSchemeDeduction :: Lens' (Deductions a) (Money a)
+forestryManagedInvestmentSchemeDeduction =
+  lens
+    _forestryManagedInvestmentSchemeDeduction
+    (\s b -> s { _forestryManagedInvestmentSchemeDeduction = b })
+
+-- | __D15__ Other deductions — not claimable at __D1__ to __D14__ or elsewhere
+-- in your tax return
+otherDeductions :: Lens' (Deductions a) (Money a)
+otherDeductions =
+  lens _otherDeductions (\s b -> s { _otherDeductions = b })
+
+-- | Aggregate of deductions related to foreign income, including:
+--
+-- * Deductions that are reasonably related to amounts on which foreign
+--   income tax has been paid
+-- * Debt deductions attributable to your overseas permanent establishment
+-- * Amount of the foreign loss component of one or more tax losses deducted
+--   in the income year.
+--
+-- The components making up this amount __must be included in other fields__.
+-- This field is only used in calculating the Foreign Income Tax Offset Limit.
+--
+foreignIncomeDeductions :: Lens' (Deductions a) (Money a)
+foreignIncomeDeductions =
+  lens _foreignIncomeDeductions (\s b -> s { _foreignIncomeDeductions = b })
+
 
 -- | A gross income (first argument) and amount of tax withheld (second argument)
 data GrossAndWithheld a = GrossAndWithheld (Money a) (Money a)
