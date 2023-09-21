@@ -98,6 +98,7 @@ module Data.Tax.ATO
   -- ** Deductions
   , Deductions
   , deductions
+  , totalDeductions
   , workRelatedCarExpenses
   , workRelatedTravelExpenses
   , workRelatedClothingLaundryAndDryCleaningExpenses
@@ -146,7 +147,7 @@ module Data.Tax.ATO
   , module Data.Tax.ATO.Rounding
   ) where
 
-import Control.Lens (Getter, Lens', foldOf, lens, to, view)
+import Control.Lens (Getter, Lens', foldOf, lens, to, view, views)
 
 import Data.Tax
 import Data.Tax.ATO.CGT
@@ -252,7 +253,7 @@ data TaxReturnInfo y a = TaxReturnInfo
   , _ess :: ESSStatement a
   , _foreignIncome :: Money a
   , _cgtEvents :: [CGTEvent a]
-  , _deductions :: Money a
+  , _deductions :: Deductions a
   , _offsets :: Offsets a
   , _triCapitalLossCarryForward :: Money a
   , _phi :: [PrivateHealthInsurancePolicyDetail a]
@@ -328,7 +329,7 @@ foreignIncome = lens _foreignIncome (\s b -> s { _foreignIncome = b })
 cgtEvents :: Lens' (TaxReturnInfo y a) [CGTEvent a]
 cgtEvents = lens _cgtEvents (\s b -> s { _cgtEvents = b })
 
-deductions :: Lens' (TaxReturnInfo y a) (Money a)
+deductions :: Lens' (TaxReturnInfo y a) (Deductions a)
 deductions = lens _deductions (\s b -> s { _deductions = b })
 
 offsets :: Lens' (TaxReturnInfo y a) (Offsets a)
@@ -440,7 +441,7 @@ instance (RealFrac a) => HasIncome (TaxReturnInfo y) a a where
         , view foreignIncome info
         ]
     in
-      wholeDollars (gross $-$ view deductions info)
+      wholeDollars (gross $-$ views deductions totalDeductions info)
 
 instance (Num a) => HasTaxWithheld (TaxReturnInfo y) a a where
   taxWithheld = to $ \info ->
@@ -621,6 +622,27 @@ instance Num a => Semigroup (Deductions a) where
 instance Num a => Monoid (Deductions a) where
   mempty = Deductions mempty mempty mempty mempty mempty mempty mempty mempty
                       mempty mempty mempty mempty mempty mempty mempty mempty
+
+-- | Sum the deductions.  Negative components are ignored.
+totalDeductions :: (Num a, Ord a) => Deductions a -> Money a
+totalDeductions a =
+  foldMap (max mempty)
+    [ view workRelatedCarExpenses a
+    , view workRelatedTravelExpenses a
+    , view workRelatedClothingLaundryAndDryCleaningExpenses a
+    , view workRelatedSelfEducationExpenses a
+    , view otherWorkRelatedExpenses a
+    , view lowValuePoolDeduction a
+    , view interestDeductions a
+    , view dividendDeductions a
+    , view giftsOrDonations a
+    , view costOfManagingTaxAffairs a
+    , view deductibleAmountOfUndeductedPurchasePriceOfAForeignPensionOrAnnuity a
+    , view personalSuperannuationContributions a
+    , view deductionForProjectPool a
+    , view forestryManagedInvestmentSchemeDeduction a
+    , view otherDeductions a
+    ]
 
 -- | __D1__ Work-related car expenses
 workRelatedCarExpenses :: Lens' (Deductions a) (Money a)
