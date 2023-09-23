@@ -149,7 +149,7 @@ module Data.Tax.ATO
   , module Data.Tax.ATO.Rounding
   ) where
 
-import Control.Lens (Getter, Lens', foldOf, lens, to, view, views)
+import Control.Lens (Getter, Lens', (&), foldOf, lens, set, to, view, views)
 
 import Data.Tax
 import Data.Tax.ATO.CGT
@@ -467,6 +467,7 @@ assessTax tables info =
     taxable = view income info
     due = getTax (individualTax tables) taxable
     studyRepayment = getTax (studyAndTrainingLoanRepayment tables info) taxable
+    mlAndMLS = getTax (medicareLevyTax tables info) taxable
 
     incomeForSurchargePurposes =
       taxable
@@ -484,18 +485,34 @@ assessTax tables info =
       (ttPHIRebateRates tables)
       (view privateHealthInsurancePolicyDetails info)
 
+    foreignIncomeTaxOffsetLimit =
+      let
+        step1 = due <> mlAndMLS
+        step2 =
+          let
+            info' = info & set foreignIncome mempty
+            taxable' = view income info' <> view (deductions . foreignIncomeDeductions) info'
+            due' = getTax (individualTax tables) taxable'
+            mlAndMLS' = getTax (medicareLevyTax tables info') taxable'
+          in
+            due' <> mlAndMLS'
+        step3 = step1 $-$ step2
+      in
+        max (Money 1000) step3
+
     frankingCredit =
       wholeDollars
       $ foldMap dividendFrankingCredit (view dividends info)
     off =
       view (offsets . spouseContributionOffset) info
-      <> view (offsets . foreignTaxOffset) info
+      <> min (view (offsets . foreignTaxOffset) info) foreignIncomeTaxOffsetLimit
       <> view (offsets . paygInstalments) info
+
   in
     TaxAssessment
       taxable
       (due <> studyRepayment)
-      (getTax (medicareLevyTax tables info) taxable)
+      mlAndMLS
       (view taxWithheld info)
       (frankingCredit <> off)
       cg
