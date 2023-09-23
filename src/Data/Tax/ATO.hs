@@ -1,3 +1,5 @@
+{-# LANGUAGE PolyKinds #-}
+
 -- This file is part of hs-tax-ato
 -- Copyright (C) 2018-2021  Fraser Tweedale
 --
@@ -396,18 +398,24 @@ instance (Num a, Eq a) => HasCapitalLossCarryForward TaxAssessment a where
 
 -- | Consolidated individual tax rate incorporating
 -- HELP and SFSS repayments
--- (if applicable) and automatic offsets (e.g. LITO).
+-- (if applicable) and automatic offsets (e.g. LITO, LMITO).
 individualTax
+  :: (Fractional a, Ord a)
+  => TaxTables y a
+  -> Tax (Money a) (Money a)
+individualTax table =
+  greaterOf mempty (ttIndividualIncomeTax table <> ttAdditional table)
+
+-- | Tax to calculate compulsory study and training loan repayments
+-- (e.g. HELP, SFSS)
+studyAndTrainingLoanRepayment
   :: (Fractional a, Ord a)
   => TaxTables y a
   -> TaxReturnInfo y a
   -> Tax (Money a) (Money a)
-individualTax table info =
-    greaterOf mempty $
-      ttIndividualIncomeTax table
-      <> limit (view helpBalance info) (ttHelp table)
-      <> limit (view sfssBalance info) (ttSfss table)
-      <> ttAdditional table
+studyAndTrainingLoanRepayment table info =
+  limit (view helpBalance info) (ttHelp table)
+  <> limit (view sfssBalance info) (ttSfss table)
 
 -- | Medicare levy + surcharge
 medicareLevyTax
@@ -457,7 +465,8 @@ assessTax tables info =
     cg = assessCGTEvents
           (view capitalLossCarryForward info) (view cgtEvents info)
     taxable = view income info
-    due = getTax (individualTax tables info) taxable
+    due = getTax (individualTax tables) taxable
+    studyRepayment = getTax (studyAndTrainingLoanRepayment tables info) taxable
 
     incomeForSurchargePurposes =
       taxable
@@ -485,7 +494,7 @@ assessTax tables info =
   in
     TaxAssessment
       taxable
-      due
+      (due <> studyRepayment)
       (getTax (medicareLevyTax tables info) taxable)
       (view taxWithheld info)
       (frankingCredit <> off)
