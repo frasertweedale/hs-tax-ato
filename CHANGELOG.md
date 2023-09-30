@@ -1,4 +1,4 @@
-## Version NEXT
+## Version 2023.2
 
 - Add support for PAYG Instalments, which are specified in aggregate
   as a refundable tax offset via the `paygInstalments` field.

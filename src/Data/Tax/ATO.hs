@@ -521,7 +521,7 @@ assessTax tables info =
 -- | Australian Business Number
 type ABN = String
 
--- | PAYG payment summary
+-- | PAYG payment summary - individual non-business
 data PaymentSummary a = PaymentSummary
   { summaryABN :: ABN
   , summaryGross :: Money a
