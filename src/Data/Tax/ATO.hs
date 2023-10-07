@@ -51,10 +51,13 @@ module Data.Tax.ATO
   -- *** Interest
   , interest
 
-  -- *** Dividends and franking credits
+  -- *** Dividends
   , Dividend(..)
   , dividends
-  , dividendFrankingCredit
+  , dividendFromGross
+  , dividendFromNet
+  , dividendFromNetFranked
+  , dividendFromNetFranked30
 
   -- *** Capital gains tax (CGT)
   , HasCapitalLossCarryForward(..)
@@ -500,9 +503,7 @@ assessTax tables info =
       in
         max (Money 1000) step3
 
-    frankingCredit =
-      wholeDollars
-      $ foldMap dividendFrankingCredit (view dividends info)
+    frankingCredit = wholeDollars $ view (dividends . taxWithheld) info
     off =
       view (offsets . spouseContributionOffset) info
       <> min (view (offsets . foreignTaxOffset) info) foreignIncomeTaxOffsetLimit
@@ -553,28 +554,81 @@ proportion = Proportion . max 0 . min 1
 data Dividend a = Dividend
   { dividendSource :: String
   , dividendDate :: String  -- FUTURE better type
-  , dividendNetPayment :: Money a
-  , dividendFrankedPortion :: Proportion a  -- ^ Franked ratio (@1@ = 100%)
-  , dividendTaxWithheld :: Money a
+  , dividendGrossAndWithheld :: GrossAndWithheld a
   }
-  deriving (Show)
 
+-- | Rounds to whole cents
 instance (RealFrac a) => HasTaxWithheld Dividend a a where
-  taxWithheld = to (roundCents . dividendTaxWithheld)
+  taxWithheld = to dividendGrossAndWithheld . taxWithheld . to roundCents
 
--- | Calculate the franking credit for a dividend
---
-dividendFrankingCredit :: (RealFrac a) => Dividend a -> Money a
-dividendFrankingCredit d = roundCents $
-  (getProportion . dividendFrankedPortion) d
-  *$ getTax corporateTax (dividendNetPayment d $* (1 / 0.7))
-
--- | Attributable income
+-- | Rounds to whole cents
 instance (RealFrac a) => HasIncome Dividend a a where
-  income = to $ \d ->
-    roundCents (dividendNetPayment d)
-    <> dividendFrankingCredit d
-    <> view taxWithheld d
+  income = to dividendGrossAndWithheld . income . to roundCents
+
+-- | Construct a dividend from a net payment, with a proportion
+-- of the dividend franked at the given corporate tax rate (must
+-- be a flat rate).
+--
+-- Does not perform rounding.
+--
+dividendFromNetFranked
+  :: (Fractional a)
+  => String         -- ^ Source name (e.g. ticker)
+  -> String         -- ^ Dividend date
+  -> Money a        -- ^ Net payment
+  -> Proportion a   -- ^ Franked proportion
+  -> Tax (Money a) (Money a)  -- ^ Corporate tax rate (must be a flat rate)
+  -> Dividend a
+dividendFromNetFranked src date net franked rate =
+  dividendFromGross src date gross withheld
+  where
+    Money r = getTax rate (Money 1)  -- extract flat tax rate
+    withheld = net $* ( getProportion franked * r / (1 - r) )
+    gross = net <> withheld
+
+-- | Construct a dividend from a net payment, with a proportion
+-- of the dividend franked at the 30% corporate tax rate.
+--
+-- Does not perform rounding.
+--
+dividendFromNetFranked30
+  :: (Fractional a)
+  => String         -- ^ Source name (e.g. ticker)
+  -> String         -- ^ Dividend date
+  -> Money a        -- ^ Net payment
+  -> Proportion a   -- ^ Franked proportion
+  -> Dividend a
+dividendFromNetFranked30 src date net franked =
+  dividendFromNetFranked src date net franked corporateTax
+
+-- | Construct a dividend from a net payment, with explicit
+-- declaration of tax withheld.
+--
+-- Does not perform rounding.
+--
+dividendFromNet
+  :: (Num a)
+  => String         -- ^ Source name (e.g. ticker)
+  -> String         -- ^ Dividend date
+  -> Money a        -- ^ Net payment
+  -> Money a        -- ^ Tax withheld
+  -> Dividend a
+dividendFromNet src date net withheld =
+  dividendFromGross src date (net <> withheld) withheld
+
+-- | Construct a dividend from a gross payment, with explicit
+-- declaration of tax withheld.
+--
+-- Does not perform rounding.
+--
+dividendFromGross
+  :: String         -- ^ Source name (e.g. ticker)
+  -> String         -- ^ Dividend date
+  -> Money a        -- ^ Gross payment
+  -> Money a        -- ^ Tax withheld
+  -> Dividend a
+dividendFromGross src date gross withheld =
+  Dividend src date (GrossAndWithheld gross withheld)
 
 -- | Tax offsets that individuals can claim
 --

@@ -1,3 +1,15 @@
+## Version NEXT
+
+- Update the `Dividend` type to use store gross payment amount and
+  tax withheld, rather than net amount, franking portion and (other)
+  tax withheld.  Add new helper functions for construction:
+  - `dividendFromGross` takes gross amount and tax withheld
+  - `dividendFromNet` takes net amount and tax withheld
+  - `dividendFromNetFranked` takes net amount, franked proportion and
+    applicable corporate tax rate for working out the franking credit.
+  - `dividendFromNetFranked30` is a shortcut that uses the standard
+    corporate tax rate of 30%.
+
 ## Version 2023.2
 
 - Add support for PAYG Instalments, which are specified in aggregate
