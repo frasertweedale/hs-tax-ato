@@ -10,6 +10,9 @@
   - `dividendFromNetFranked30` is a shortcut that uses the standard
     corporate tax rate of 30%.
 
+- Change the type of `dividendDate` field from `String` to
+  `Data.Time.Day`.
+
 ## Version 2023.2
 
 - Add support for PAYG Instalments, which are specified in aggregate

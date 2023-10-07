@@ -153,6 +153,7 @@ module Data.Tax.ATO
   ) where
 
 import Control.Lens (Getter, Lens', (&), foldOf, lens, set, to, view, views)
+import Data.Time (Day)
 
 import Data.Tax
 import Data.Tax.ATO.CGT
@@ -553,7 +554,7 @@ proportion = Proportion . max 0 . min 1
 -- and amount of tax withheld.
 data Dividend a = Dividend
   { dividendSource :: String
-  , dividendDate :: String  -- FUTURE better type
+  , dividendDate :: Day
   , dividendGrossAndWithheld :: GrossAndWithheld a
   }
 
@@ -574,7 +575,7 @@ instance (RealFrac a) => HasIncome Dividend a a where
 dividendFromNetFranked
   :: (Fractional a)
   => String         -- ^ Source name (e.g. ticker)
-  -> String         -- ^ Dividend date
+  -> Day            -- ^ Dividend date
   -> Money a        -- ^ Net payment
   -> Proportion a   -- ^ Franked proportion
   -> Tax (Money a) (Money a)  -- ^ Corporate tax rate (must be a flat rate)
@@ -594,7 +595,7 @@ dividendFromNetFranked src date net franked rate =
 dividendFromNetFranked30
   :: (Fractional a)
   => String         -- ^ Source name (e.g. ticker)
-  -> String         -- ^ Dividend date
+  -> Day            -- ^ Dividend date
   -> Money a        -- ^ Net payment
   -> Proportion a   -- ^ Franked proportion
   -> Dividend a
@@ -609,7 +610,7 @@ dividendFromNetFranked30 src date net franked =
 dividendFromNet
   :: (Num a)
   => String         -- ^ Source name (e.g. ticker)
-  -> String         -- ^ Dividend date
+  -> Day            -- ^ Dividend date
   -> Money a        -- ^ Net payment
   -> Money a        -- ^ Tax withheld
   -> Dividend a
@@ -623,7 +624,7 @@ dividendFromNet src date net withheld =
 --
 dividendFromGross
   :: String         -- ^ Source name (e.g. ticker)
-  -> String         -- ^ Dividend date
+  -> Day            -- ^ Dividend date
   -> Money a        -- ^ Gross payment
   -> Money a        -- ^ Tax withheld
   -> Dividend a
