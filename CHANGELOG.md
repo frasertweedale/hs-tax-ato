@@ -13,6 +13,9 @@
 - Change the type of `dividendDate` field from `String` to
   `Data.Time.Day`.
 
+- Rename the `HasIncome` class to `HasTaxableIncome`, and its
+  member function `income` to `taxableIncome`.
+
 ## Version 2023.2
 
 - Add support for PAYG Instalments, which are specified in aggregate

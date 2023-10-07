@@ -30,7 +30,7 @@ module Data.Tax.ATO.Common
     TaxTables(..)
 
   -- * Classes
-  , HasIncome(..)
+  , HasTaxableIncome(..)
 
   -- * Common taxes and helpers
   , medicareLevy
@@ -120,9 +120,12 @@ marginal' = marginal . fmap (first (review money))
 -- ^ Convenience wrapper for 'marginal'.  Turns the margins into 'Money'
 
 
--- | Types that have an income value.
-class HasIncome a b c where
-  income :: Getter (a b) (Money c)
+-- | Types that may have a taxable income component.
+class HasTaxableIncome a b c where
+  taxableIncome :: Getter (a b) (Money c)
 
-instance (Foldable t, HasIncome x a a, Num a) => HasIncome t (x a) a where
-  income = to (foldMap (view income))
+instance
+    (Foldable t, HasTaxableIncome x a a, Num a)
+    => HasTaxableIncome t (x a) a
+    where
+  taxableIncome = to (foldMap (view taxableIncome))

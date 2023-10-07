@@ -39,7 +39,7 @@ module Data.Tax.ATO
     TaxReturnInfo
   , newTaxReturnInfo
   , newTaxReturnInfoForTables
-  , income
+  , taxableIncome
 
   -- ** Income
 
@@ -364,9 +364,8 @@ data TaxAssessment a = TaxAssessment
   , _phiAdj :: Money a
   }
 
--- | Taxable income
-instance HasIncome TaxAssessment a a where
-  income = to _taxableIncome
+instance HasTaxableIncome TaxAssessment a a where
+  taxableIncome = to _taxableIncome
 
 instance HasTaxWithheld TaxAssessment a a where
   taxWithheld = to _taxWithheld
@@ -440,15 +439,15 @@ medicareLevyTax table info =
     <> fmap ($* mlsFrac) mls
 
 -- | Taxable income
-instance (RealFrac a) => HasIncome (TaxReturnInfo y) a a where
-  income = to $ \info ->
+instance (RealFrac a) => HasTaxableIncome (TaxReturnInfo y) a a where
+  taxableIncome = to $ \info ->
     let
       cf = view capitalLossCarryForward info
       gross = foldMap wholeDollars
-        [ view (paymentSummaries . income) info
-        , view (interest . income) info
-        , view (dividends . income) info
-        , view (ess . income) info
+        [ view (paymentSummaries . taxableIncome) info
+        , view (interest . taxableIncome) info
+        , view (dividends . taxableIncome) info
+        , view (ess . taxableIncome) info
         , view (cgtEvents . to (assessCGTEvents cf) . cgtNetGain) info
         , view foreignIncome info
         ]
@@ -468,7 +467,7 @@ assessTax tables info =
   let
     cg = assessCGTEvents
           (view capitalLossCarryForward info) (view cgtEvents info)
-    taxable = view income info
+    taxable = view taxableIncome info
     due = getTax (individualTax tables) taxable
     studyRepayment = getTax (studyAndTrainingLoanRepayment tables info) taxable
     mlAndMLS = getTax (medicareLevyTax tables info) taxable
@@ -495,7 +494,9 @@ assessTax tables info =
         step2 =
           let
             info' = info & set foreignIncome mempty
-            taxable' = view income info' <> view (deductions . foreignIncomeDeductions) info'
+            taxable' =
+              view taxableIncome info'
+              <> view (deductions . foreignIncomeDeductions) info'
             due' = getTax (individualTax tables) taxable'
             mlAndMLS' = getTax (medicareLevyTax tables info') taxable'
           in
@@ -532,8 +533,8 @@ data PaymentSummary a = PaymentSummary
   }
 
 -- | Gross income
-instance HasIncome PaymentSummary a a where
-  income = to summaryGross
+instance HasTaxableIncome PaymentSummary a a where
+  taxableIncome = to summaryGross
 
 instance HasTaxWithheld PaymentSummary a a where
   taxWithheld = to summaryWithheld
@@ -563,8 +564,8 @@ instance (RealFrac a) => HasTaxWithheld Dividend a a where
   taxWithheld = to dividendGrossAndWithheld . taxWithheld . to roundCents
 
 -- | Rounds to whole cents
-instance (RealFrac a) => HasIncome Dividend a a where
-  income = to dividendGrossAndWithheld . income . to roundCents
+instance (RealFrac a) => HasTaxableIncome Dividend a a where
+  taxableIncome = to dividendGrossAndWithheld . taxableIncome . to roundCents
 
 -- | Construct a dividend from a net payment, with a proportion
 -- of the dividend franked at the given corporate tax rate (must
@@ -823,7 +824,9 @@ foreignIncomeDeductions =
   lens _foreignIncomeDeductions (\s b -> s { _foreignIncomeDeductions = b })
 
 
--- | A gross income (first argument) and amount of tax withheld (second argument)
+-- | A gross income (first argument) and amount of tax withheld (second argument).
+-- The whole gross amount is considered taxable income.
+--
 data GrossAndWithheld a = GrossAndWithheld (Money a) (Money a)
 
 instance (Num a) => Semigroup (GrossAndWithheld a) where
@@ -834,8 +837,8 @@ instance (Num a) => Monoid (GrossAndWithheld a) where
   mempty = GrossAndWithheld mempty mempty
   mappend = (<>)
 
-instance HasIncome GrossAndWithheld a a where
-  income = to $ \(GrossAndWithheld a _) -> a
+instance HasTaxableIncome GrossAndWithheld a a where
+  taxableIncome = to $ \(GrossAndWithheld a _) -> a
 
 instance HasTaxWithheld GrossAndWithheld a a where
   taxWithheld = to $ \(GrossAndWithheld _ a) -> a
@@ -891,8 +894,8 @@ essForeignSourceDiscounts =
 
 -- | __Note:__ does not implement the reduction of taxed up front
 -- amounts eligible for reduction.
-instance (Num a) => HasIncome ESSStatement a a where
-  income = to $ \s ->
+instance (Num a) => HasTaxableIncome ESSStatement a a where
+  taxableIncome = to $ \s ->
     view essTaxedUpfrontReduction s
     <> view essTaxedUpfrontNoReduction s
     <> view essDeferral s
