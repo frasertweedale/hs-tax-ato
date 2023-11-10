@@ -1,5 +1,8 @@
 ## Version NEXT
 
+- The minimum supported version of GHC is now 9.2, due to a
+  dependency on more recent versions of the *time* library.
+
 - Update the `Dividend` type to use store gross payment amount and
   tax withheld, rather than net amount, franking portion and (other)
   tax withheld.  Add new helper functions for construction:
