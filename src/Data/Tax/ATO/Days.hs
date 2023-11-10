@@ -1,5 +1,5 @@
 -- This file is part of hs-tax-ato
--- Copyright (C) 2018  Fraser Tweedale
+-- Copyright (C) 2018, 2023  Fraser Tweedale
 --
 -- hs-tax-ato is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU Affero General Public License as published by
@@ -33,6 +33,8 @@ module Data.Tax.ATO.Days
   , getDays
   , getFraction
   , FinancialYear
+  , financialYearRange
+  , financialYearRangeFromProxy
   )
   where
 
@@ -40,7 +42,7 @@ import GHC.TypeLits
 import Data.Proxy
 import Data.Ratio ((%))
 
-import Data.Time.Calendar (isLeapYear)
+import Data.Time.Calendar (Day, Year, fromGregorian, isLeapYear)
 
 type FinancialYear = KnownNat
 
@@ -74,3 +76,16 @@ daysNone = Days 0
 --
 getFraction :: forall a frac. (FinancialYear a, Fractional frac) => Days a -> frac
 getFraction n = fromRational $ getDays n % daysInYear (Proxy :: Proxy a)
+
+-- | Get the range of days (inclusive) for the financial year (July to June)
+-- ending in the given year.
+financialYearRange :: Year -> (Day, Day)
+financialYearRange y =
+  ( fromGregorian (y - 1) 7{-July-} 1
+  , fromGregorian y       6{-June-} 30
+  )
+
+-- | Get the financial year range (inclusive) for the given type-level
+-- financial year.  See also 'financialYearRange'.
+financialYearRangeFromProxy :: forall n. (FinancialYear n) => Proxy n -> (Day, Day)
+financialYearRangeFromProxy proxy = financialYearRange (natVal proxy)

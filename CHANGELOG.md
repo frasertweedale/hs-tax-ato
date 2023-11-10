@@ -16,6 +16,8 @@
 - Rename the `HasIncome` class to `HasTaxableIncome`, and its
   member function `income` to `taxableIncome`.
 
+- Add functions for getting the `Day` range of a financial year.
+
 ## Version 2023.2
 
 - Add support for PAYG Instalments, which are specified in aggregate
