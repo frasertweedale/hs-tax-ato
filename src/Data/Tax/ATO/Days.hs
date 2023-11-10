@@ -16,7 +16,7 @@
 
 {-|
 
-Types for representing a number of days in a year.
+Types and functions related to financial years.
 
 -}
 
@@ -32,7 +32,7 @@ module Data.Tax.ATO.Days
   , daysNone
   , getDays
   , getFraction
-  , DaysInYear
+  , FinancialYear
   )
   where
 
@@ -42,8 +42,7 @@ import Data.Ratio ((%))
 
 import Data.Time.Calendar (isLeapYear)
 
-type Year = Nat
-type DaysInYear = KnownNat
+type FinancialYear = KnownNat
 
 daysInYear :: KnownNat n => Proxy n -> Integer
 daysInYear proxy
@@ -51,7 +50,7 @@ daysInYear proxy
   | otherwise                 = 365
 
 -- | Some number of days in a year.  Use 'days' to construct.
-newtype Days (n :: Year) = Days
+newtype Days (n :: Nat) = Days
   { getDays :: Integer
   -- ^ Get the number of days, which is between 0 and 365/366 inclusive.
   }
@@ -59,11 +58,11 @@ newtype Days (n :: Year) = Days
 
 -- | Construct a 'Days' value.  If out of range, the number of days
 -- is clamped to 0 or 365/366 (no runtime errors).
-days :: forall a. (DaysInYear a) => Integer -> Days a
+days :: forall a. (FinancialYear a) => Integer -> Days a
 days = Days . max 0 . min (daysInYear (Proxy :: Proxy a))
 
 -- | Every day of the year
-daysAll :: forall a. (DaysInYear a) => Days a
+daysAll :: forall a. (FinancialYear a) => Days a
 daysAll = Days (daysInYear (Proxy :: Proxy a))
 
 -- | Zero days of the year
@@ -71,6 +70,7 @@ daysNone :: Days a
 daysNone = Days 0
 
 -- | Get the number of days as a fractional value.
--- Information about the the year type is discarded.
-getFraction :: forall a frac. (DaysInYear a, Fractional frac) => Days a -> frac
+-- The denominator is determined by the year type.
+--
+getFraction :: forall a frac. (FinancialYear a, Fractional frac) => Days a -> frac
 getFraction n = fromRational $ getDays n % daysInYear (Proxy :: Proxy a)

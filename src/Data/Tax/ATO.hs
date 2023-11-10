@@ -276,7 +276,7 @@ data TaxReturnInfo y a = TaxReturnInfo
 -- fully exempt).
 --
 newTaxReturnInfo
-  :: (DaysInYear y, Num a)
+  :: (FinancialYear y, Num a)
   => TaxReturnInfo y a
 newTaxReturnInfo = TaxReturnInfo
   daysAll  -- MLS exemption
@@ -300,7 +300,7 @@ newTaxReturnInfo = TaxReturnInfo
 -- argument (which is ignored).
 --
 newTaxReturnInfoForTables
-  :: (DaysInYear y, Num a)
+  :: (FinancialYear y, Num a)
   => TaxTables y a -> TaxReturnInfo y a
 newTaxReturnInfoForTables _ = newTaxReturnInfo
 
@@ -422,7 +422,7 @@ studyAndTrainingLoanRepayment table info =
 
 -- | Medicare levy + surcharge
 medicareLevyTax
-  :: (DaysInYear y, Fractional a)
+  :: (FinancialYear y, Fractional a)
   => TaxTables y a
   -> TaxReturnInfo y a
   -> Tax (Money a) (Money a)    -- grand unified individual income tax
@@ -461,7 +461,7 @@ instance (Num a) => HasTaxWithheld (TaxReturnInfo y) a a where
 
 -- | Assess a tax return, given tax tables and tax return info.
 assessTax
-  :: (DaysInYear y, RealFrac a)
+  :: (FinancialYear y, RealFrac a)
   => TaxTables y a -> TaxReturnInfo y a -> TaxAssessment a
 assessTax tables info =
   let
