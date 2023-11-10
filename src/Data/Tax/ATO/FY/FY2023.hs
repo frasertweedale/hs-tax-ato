@@ -17,11 +17,16 @@
 {-# LANGUAGE DataKinds #-}
 
 -- | Tax tables for 2022–23 financial year.
-module Data.Tax.ATO.FY.FY2023 (tables) where
+module Data.Tax.ATO.FY.FY2023 (FY, fyProxy, tables) where
 
+import Data.Proxy
 import Data.Tax
 import Data.Tax.ATO.Common
 import qualified Data.Tax.ATO.FY.FY2022 as FY2022
+
+type FY = 2023
+fyProxy :: Proxy FY
+fyProxy = Proxy
 
 help :: (Fractional a, Ord a) => Tax (Money a) (Money a)
 help = thresholds'

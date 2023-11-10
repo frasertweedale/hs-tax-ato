@@ -25,6 +25,10 @@
   rename the `DaysInYear` type synonym to `FinancialYear`, to
   reflect the additional behaviour.
 
+- Each `FY.<YYYY>` module now exports an `FY` type synonym for its
+  type-level `Nat` representing the financial year, and the `fyProxy
+  :: Proxy FY` value.
+
 ## Version 2023.2
 
 - Add support for PAYG Instalments, which are specified in aggregate

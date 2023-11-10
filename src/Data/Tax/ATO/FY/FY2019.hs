@@ -17,13 +17,18 @@
 {-# LANGUAGE DataKinds #-}
 
 -- | Tax tables for 2018–19 financial year.
-module Data.Tax.ATO.FY.FY2019 (tables) where
+module Data.Tax.ATO.FY.FY2019 (FY, fyProxy, tables) where
 
+import Data.Proxy
 import Control.Lens (review)
 
 import Data.Tax
 import Data.Tax.ATO.Common
 import Data.Tax.ATO.PrivateHealthInsuranceRebate
+
+type FY = 2019
+fyProxy :: Proxy FY
+fyProxy = Proxy
 
 -- | In FY2019 the 37% threshold was increased from $87,000 to $90,000.
 individualIncomeTax :: (Fractional a, Ord a) => Tax (Money a) (Money a)
@@ -45,7 +50,7 @@ sfss = thresholds' [(51957, 0.02), (64307, 0.01), (91426, 0.01)]
 -- The new /low and middle income tax offset (LAMITO)/ was
 -- introduced, in addition to LITO.
 --
-tables :: (Ord a, Fractional a) => TaxTables 2019 a
+tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   individualIncomeTax
   (medicareLevy (review money 22398))

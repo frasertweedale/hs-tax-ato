@@ -17,14 +17,19 @@
 {-# LANGUAGE DataKinds #-}
 
 -- | Tax tables for 2021–22 financial year.
-module Data.Tax.ATO.FY.FY2022 (tables) where
+module Data.Tax.ATO.FY.FY2022 (FY, fyProxy, tables) where
 
+import Data.Proxy
 import Control.Lens (review)
 
 import Data.Tax
 import Data.Tax.ATO.Common
 import Data.Tax.ATO.PrivateHealthInsuranceRebate
 import qualified Data.Tax.ATO.FY.FY2021 as FY2021
+
+type FY = 2022
+fyProxy :: Proxy FY
+fyProxy = Proxy
 
 help :: (Fractional a, Ord a) => Tax (Money a) (Money a)
 help = thresholds'
@@ -48,7 +53,7 @@ help = thresholds'
   , (137898, 0.005)
   ]
 
-tables :: (Ord a, Fractional a) => TaxTables 2022 a
+tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   FY2021.individualIncomeTax
   (medicareLevy (review money 23365))

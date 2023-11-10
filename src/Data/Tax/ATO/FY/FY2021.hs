@@ -17,13 +17,18 @@
 {-# LANGUAGE DataKinds #-}
 
 -- | Tax tables for 2020–21 financial year.
-module Data.Tax.ATO.FY.FY2021 (tables, individualIncomeTax) where
+module Data.Tax.ATO.FY.FY2021 (FY, fyProxy, tables, individualIncomeTax) where
 
+import Data.Proxy
 import Control.Lens (review)
 
 import Data.Tax
 import Data.Tax.ATO.Common
 import Data.Tax.ATO.PrivateHealthInsuranceRebate
+
+type FY = 2021
+fyProxy :: Proxy FY
+fyProxy = Proxy
 
 -- | In 2020–21 the 32.5% threshold was increased from $37,000 to
 -- $45,000, and the 37% threshold was increased from $90,000 to
@@ -57,7 +62,7 @@ help = thresholds'
   , (136740, 0.005)
   ]
 
-tables :: (Ord a, Fractional a) => TaxTables 2021 a
+tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   individualIncomeTax
   (medicareLevy (review money 23226))

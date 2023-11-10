@@ -17,13 +17,18 @@
 {-# LANGUAGE DataKinds #-}
 
 -- | Tax tables for 2017–18 financial year.
-module Data.Tax.ATO.FY.FY2018 (tables) where
+module Data.Tax.ATO.FY.FY2018 (FY, fyProxy, tables) where
 
+import Data.Proxy
 import Control.Lens (review)
 import Data.Tax
 import Data.Tax.ATO.Common
 import Data.Tax.ATO.PrivateHealthInsuranceRebate
 import qualified Data.Tax.ATO.FY.FY2017 as FY2017
+
+type FY = 2018
+fyProxy :: Proxy FY
+fyProxy = Proxy
 
 help, sfss :: (Fractional a, Ord a) => Tax (Money a) (Money a)
 help = thresholds'
@@ -36,7 +41,7 @@ sfss = thresholds' [(55874, 0.02), (68603, 0.01), (97378, 0.01)]
 --
 -- The /temporary budget repair levy/ no longer applies.
 --
-tables :: (Ord a, Fractional a) => TaxTables 2018 a
+tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   FY2017.individualIncomeTax
   (medicareLevy (review money 21980))

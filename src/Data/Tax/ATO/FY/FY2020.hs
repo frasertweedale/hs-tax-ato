@@ -17,14 +17,19 @@
 {-# LANGUAGE DataKinds #-}
 
 -- | Tax tables for 2019–20 financial year.
-module Data.Tax.ATO.FY.FY2020 (tables) where
+module Data.Tax.ATO.FY.FY2020 (FY, fyProxy, tables) where
 
+import Data.Proxy
 import Control.Lens (review)
 
 import Data.Tax
 import Data.Tax.ATO.Common
 import Data.Tax.ATO.PrivateHealthInsuranceRebate
 import qualified Data.Tax.ATO.FY.FY2019 as FY2019
+
+type FY = 2020
+fyProxy :: Proxy FY
+fyProxy = Proxy
 
 help :: (Fractional a, Ord a) => Tax (Money a) (Money a)
 help = thresholds'
@@ -52,7 +57,7 @@ help = thresholds'
 -- one set of thresholds and rates.  For backwards compatibility,
 -- 'ttHelp' and 'ttSfss' now refer to the same value.
 --
-tables :: (Ord a, Fractional a) => TaxTables 2020 a
+tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   (ttIndividualIncomeTax FY2019.tables)
   (medicareLevy (review money 22801))
