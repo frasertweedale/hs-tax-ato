@@ -21,6 +21,10 @@
 
 - Add functions for getting the `Day` range of a financial year.
 
+- Move the `Data.Tax.ATO.Days` module to `Data.Tax.ATO.FY` and
+  rename the `DaysInYear` type synonym to `FinancialYear`, to
+  reflect the additional behaviour.
+
 ## Version 2023.2
 
 - Add support for PAYG Instalments, which are specified in aggregate

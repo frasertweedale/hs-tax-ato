@@ -25,7 +25,7 @@ Types and functions related to financial years.
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Data.Tax.ATO.Days
+module Data.Tax.ATO.FY
   ( Days
   , days
   , daysAll

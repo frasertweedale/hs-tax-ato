@@ -158,7 +158,7 @@ import Data.Time (Day)
 import Data.Tax
 import Data.Tax.ATO.CGT
 import Data.Tax.ATO.Common
-import Data.Tax.ATO.Days
+import Data.Tax.ATO.FY
 import Data.Tax.ATO.PrivateHealthInsuranceRebate
 import Data.Tax.ATO.Rounding
 
