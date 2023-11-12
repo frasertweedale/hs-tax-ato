@@ -75,6 +75,13 @@ data CGTEvent a = CGTEvent
   }
   deriving (Show)
 
+instance Functor CGTEvent where
+  fmap f (CGTEvent k n t1 p1 b1 t2 p2 b2 cap own) =
+    CGTEvent k (f n)
+      t1 (f <$> p1) (f <$> b1)
+      t2 (f <$> p2) (f <$> b2)
+      (f <$> cap) (f <$> own)
+
 reducedCostBase :: Num a => CGTEvent a -> Money a
 reducedCostBase event =
   (units event *$ acquisitionPrice event)

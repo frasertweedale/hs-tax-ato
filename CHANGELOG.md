@@ -29,6 +29,8 @@
   type-level `Nat` representing the financial year, and the `fyProxy
   :: Proxy FY` value.
 
+- Add `Functor` instance for `CGTEvent`.
+
 ## Version 2023.2
 
 - Add support for PAYG Instalments, which are specified in aggregate
