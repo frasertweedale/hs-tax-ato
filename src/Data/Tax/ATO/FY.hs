@@ -33,6 +33,7 @@ module Data.Tax.ATO.FY
   , getDays
   , getFraction
   , FinancialYear
+  , financialYear
   , financialYearRange
   , financialYearRangeFromProxy
   )
@@ -42,7 +43,7 @@ import GHC.TypeLits
 import Data.Proxy
 import Data.Ratio ((%))
 
-import Data.Time.Calendar (Day, Year, fromGregorian, isLeapYear)
+import Data.Time.Calendar (Day, Year, fromGregorian, isLeapYear, toGregorian)
 
 type FinancialYear = KnownNat
 
@@ -76,6 +77,14 @@ daysNone = Days 0
 --
 getFraction :: forall a frac. (FinancialYear a, Fractional frac) => Days a -> frac
 getFraction n = fromRational $ getDays n % daysInYear (Proxy :: Proxy a)
+
+-- | The financial year in which the given day falls.
+--
+financialYear :: Day -> Year
+financialYear d = case toGregorian d of
+  (y, m, _)
+    | m >= 7{-July-}  -> y + 1
+    | otherwise       -> y
 
 -- | Get the range of days (inclusive) for the financial year (July to June)
 -- ending in the given year.

@@ -19,7 +19,8 @@
 - Rename the `HasIncome` class to `HasTaxableIncome`, and its
   member function `income` to `taxableIncome`.
 
-- Add functions for getting the `Day` range of a financial year.
+- Add functions for getting the `Day` range of a financial year,
+  and a function for getting the financial year of a given day.
 
 - Move the `Data.Tax.ATO.Days` module to `Data.Tax.ATO.FY` and
   rename the `DaysInYear` type synonym to `FinancialYear`, to
