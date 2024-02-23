@@ -1,4 +1,4 @@
-## Version NEXT
+## Version 2023.3
 
 - The minimum supported version of GHC is now 9.2, due to a
   dependency on more recent versions of the *time* library.
