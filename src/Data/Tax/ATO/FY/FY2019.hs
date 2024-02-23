@@ -25,6 +25,7 @@ import Control.Lens (review)
 import Data.Tax
 import Data.Tax.ATO.Common
 import Data.Tax.ATO.PrivateHealthInsuranceRebate
+import qualified Data.Tax.ATO.FY.FY2018 as FY2018
 
 type FY = 2019
 fyProxy :: Proxy FY
@@ -54,7 +55,7 @@ tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   individualIncomeTax
   (medicareLevy (review money 22398))
-  medicareLevySurcharge
+  (ttMedicareLevySurcharge FY2018.tables)
   help
   sfss
   (lowIncomeTaxOffset <> lamito)

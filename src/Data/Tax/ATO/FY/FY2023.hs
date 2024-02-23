@@ -55,8 +55,8 @@ tables = TaxTables
   (ttIndividualIncomeTax FY2022.tables)
 
   (medicareLevy (Money 24276))
+  (ttMedicareLevySurcharge FY2022.tables)
 
-  medicareLevySurcharge
   help
   help
 

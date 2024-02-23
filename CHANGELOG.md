@@ -32,6 +32,10 @@
 
 - Add `Functor` instance for `CGTEvent`.
 
+- Add *non-final* `FY2024` module.  Previous year values are used
+  for some thresholds and rates that are yet to be declared.
+
+
 ## Version 2023.2
 
 - Add support for PAYG Instalments, which are specified in aggregate

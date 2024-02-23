@@ -34,7 +34,6 @@ module Data.Tax.ATO.Common
 
   -- * Common taxes and helpers
   , medicareLevy
-  , medicareLevySurcharge
   , lowIncomeTaxOffset
   , lowIncomeTaxOffset2021
   , lamito
@@ -69,18 +68,6 @@ data TaxTables y a = TaxTables
 --
 medicareLevy :: (Fractional a, Ord a) => Money a -> Tax (Money a) (Money a)
 medicareLevy l = lesserOf (above l 0.1) (flat 0.02)
-
--- | /Medicare levy surcharge (MLS)/.  Certain exemptions are available.
---
--- __Known issues__: the MLS is levied on taxable income + fringe
--- benefits, but this is not implemented properly yet.  The
--- thresholds are affected by family income and number of
--- dependents; this also is not implemented.
-medicareLevySurcharge :: (Fractional a, Ord a) => Tax (Money a) (Money a)
-medicareLevySurcharge =
-  threshold (review money 90000) 0.01
-  <> threshold (review money 105000) 0.0025
-  <> threshold (review money 140000) 0.0025
 
 -- | /Low income tax offset (LITO)/.  $445, reduced by 1.5c for
 -- every dollar earned over $37,000. The lump amount may change in

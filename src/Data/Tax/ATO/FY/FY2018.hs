@@ -45,7 +45,7 @@ tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   FY2017.individualIncomeTax
   (medicareLevy (review money 21980))
-  medicareLevySurcharge
+  (ttMedicareLevySurcharge FY2017.tables)
   help
   sfss
   lowIncomeTaxOffset

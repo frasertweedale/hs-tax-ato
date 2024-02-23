@@ -61,7 +61,7 @@ tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   (ttIndividualIncomeTax FY2019.tables)
   (medicareLevy (review money 22801))
-  medicareLevySurcharge
+  (ttMedicareLevySurcharge FY2019.tables)
   help
   help
   (lowIncomeTaxOffset <> lamito)

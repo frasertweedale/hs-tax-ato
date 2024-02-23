@@ -43,6 +43,19 @@ help = thresholds'
   , (82551, 0.005), (86895, 0.005), (95627, 0.005), (101900, 0.005) ]
 sfss = thresholds' [(54869, 0.02), (67369, 0.01), (95627, 0.01)]
 
+-- | /Medicare levy surcharge (MLS)/.  Certain exemptions are available.
+--
+-- __Known issues__: the MLS is levied on taxable income + fringe
+-- benefits, but this is not implemented properly yet.  The
+-- thresholds are affected by family income and number of
+-- dependents; this also is not implemented.
+--
+medicareLevySurcharge :: (Fractional a, Ord a) => Tax (Money a) (Money a)
+medicareLevySurcharge =
+  threshold (Money 90000) 0.01
+  <> threshold (Money 105000) 0.0025
+  <> threshold (Money 140000) 0.0025
+
 -- | In FY2017 the 37% threshold was raised from $80,000 to $87,000
 --
 -- The Temporary Budget Repair Levy, 2% of income above $180,000,
