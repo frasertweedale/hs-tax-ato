@@ -16,8 +16,9 @@ category:            Finance
 build-type:          Simple
 tested-with:         GHC ==9.2.8 || ==9.4.7 || ==9.6.3 || ==9.8.1
 extra-source-files:
-  CHANGELOG.md
   .hlint.yaml
+extra-doc-files:
+  CHANGELOG.md
 
 homepage:            https://github.com/frasertweedale/hs-tax-ato
 bug-reports:         https://github.com/frasertweedale/hs-tax-ato/issues
