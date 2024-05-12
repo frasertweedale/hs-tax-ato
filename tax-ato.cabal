@@ -63,6 +63,7 @@ library
     Data.Tax.ATO
     Data.Tax.ATO.CGT
     Data.Tax.ATO.Common
+    Data.Tax.ATO.Pretty
     Data.Tax.ATO.PrivateHealthInsuranceRebate
     Data.Tax.ATO.Rounding
     Data.Tax.ATO.FY
@@ -78,3 +79,4 @@ library
     , lens >= 4.12 && < 6
     , time >= 1.11 && < 1.13
     , tax >= 0.2 && < 0.3
+    , pretty >= 1.1.3.6 && < 2

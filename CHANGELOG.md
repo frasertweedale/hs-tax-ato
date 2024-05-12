@@ -35,6 +35,9 @@
 - Add *non-final* `FY2024` module.  Previous year values are used
   for some thresholds and rates that are yet to be declared.
 
+- Add `Data.Tax.ATO.Pretty` module, which provides pretty printers
+  for `TaxReturnInfo`, `TaxAssessment`, and other data types.
+
 
 ## Version 2023.2
 
