@@ -27,6 +27,8 @@ module Data.Tax.ATO.PrivateHealthInsuranceRebate
   , PrivateHealthInsurancePolicyDetail(..)
   , BenefitCode(..)
   , assessExcessPrivateHealthRebate
+  , HealthInsurerID
+  , MembershipNumber
   ) where
 
 import Data.List (find)
@@ -40,12 +42,14 @@ type MembershipNumber = String
 
 data BenefitCode
   = BenefitCode30 -- ^ Under 65, 1 July to 31 March
-  | BenefitCode31 -- ^ Over 65, 1 April to 30 June
+  | BenefitCode31 -- ^ Under 65, 1 April to 30 June
   | BenefitCode35 -- ^ 65 to 69, 1 July to 31 March
   | BenefitCode36 -- ^ 65 to 69, 1 April to 30 June
   | BenefitCode40 -- ^ 70 or over, 1 July to 31 March
   | BenefitCode41 -- ^ 70 or over, 1 April to 30 June
 
+-- | Include these data in your tax return via the
+-- 'Data.Tax.ATO.privateHealthInsurancePolicyDetails' field.
 data PrivateHealthInsurancePolicyDetail a =
   PrivateHealthInsurancePolicyDetail
     HealthInsurerID
