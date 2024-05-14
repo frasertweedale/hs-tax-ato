@@ -134,6 +134,7 @@ module Data.Tax.ATO
   , taxBalance
   , taxDue
   , medicareLevyDue
+  , studyAndTrainingLoanRepayment
   , taxCreditsAndOffsets
   , taxCGTAssessment
   , privateHealthInsuranceRebateAdjustment
@@ -370,6 +371,7 @@ data TaxAssessment a = TaxAssessment
   , _taxCreditsAndOffsets :: Money a
   , _taCGTAssessment :: CGTAssessment a
   , _phiAdj :: Money a
+  , _studyAndTrainingLoanRepayment :: Money a
   }
 
 instance HasTaxableIncome TaxAssessment a a where
@@ -390,6 +392,10 @@ taxCreditsAndOffsets = to _taxCreditsAndOffsets
 taxCGTAssessment :: Lens' (TaxAssessment a) (CGTAssessment a)
 taxCGTAssessment = lens _taCGTAssessment (\s b -> s { _taCGTAssessment = b })
 
+studyAndTrainingLoanRepayment :: Lens' (TaxAssessment a) (Money a)
+studyAndTrainingLoanRepayment =
+  lens _studyAndTrainingLoanRepayment (\s b -> s { _studyAndTrainingLoanRepayment = b })
+
 privateHealthInsuranceRebateAdjustment :: Lens' (TaxAssessment a) (Money a)
 privateHealthInsuranceRebateAdjustment = lens _phiAdj (\s b -> s { _phiAdj = b })
 
@@ -400,6 +406,7 @@ taxBalance = to $ \a ->
   view taxWithheld a
   $-$ view taxDue a
   $-$ view medicareLevyDue a
+  $-$ view studyAndTrainingLoanRepayment a
   $-$ view privateHealthInsuranceRebateAdjustment a
   $+$ view taxCreditsAndOffsets a
 
@@ -419,12 +426,12 @@ individualTax table =
 
 -- | Tax to calculate compulsory study and training loan repayments
 -- (e.g. HELP, SFSS)
-studyAndTrainingLoanRepayment
+studyAndTrainingLoanRepaymentTax
   :: (Fractional a, Ord a)
   => TaxTables y a
   -> TaxReturnInfo y a
   -> Tax (Money a) (Money a)
-studyAndTrainingLoanRepayment table info =
+studyAndTrainingLoanRepaymentTax table info =
   limit (view helpBalance info) (ttHelp table)
   <> limit (view sfssBalance info) (ttSfss table)
 
@@ -479,7 +486,7 @@ assessTax tables info =
           (view capitalLossCarryForward info) (view cgtEvents info)
     taxable = view taxableIncome info
     due = getTax (individualTax tables) taxable
-    studyRepayment = getTax (studyAndTrainingLoanRepayment tables info) taxable
+    studyRepayment = getTax (studyAndTrainingLoanRepaymentTax tables info) taxable
     mlAndMLS = getTax (medicareLevyTax tables info) taxable
 
     incomeForSurchargePurposes =
@@ -524,12 +531,13 @@ assessTax tables info =
   in
     TaxAssessment
       taxable
-      (due <> studyRepayment)
+      due
       mlAndMLS
       (view taxWithheld info)
       (frankingCredit <> off)
       cg
       phiAdj
+      studyRepayment
 
 -- | Australian Business Number
 type ABN = String

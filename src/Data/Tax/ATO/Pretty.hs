@@ -151,6 +151,7 @@ summariseAssessment assessment =
     [ ("Tax on your taxable income"                 , view taxDue assessment)
     , ("Less credits and offsets"                   , views taxCreditsAndOffsets (fmap negate) assessment)
     , ("Medicare levy (and surcharge, if any)"      , view medicareLevyDue assessment)
+    , ("Study and training loan repayment"          , view studyAndTrainingLoanRepayment assessment)
     , ("Excess private health reduction or refund"  , view privateHealthInsuranceRebateAdjustment assessment)
     , ("Less tax withheld"                          , views taxWithheld (fmap negate) assessment)
     ]
