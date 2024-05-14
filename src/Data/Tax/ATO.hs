@@ -221,13 +221,14 @@ dependentChildren =
 -- +---------------------------------------+----------------------------------+
 -- | 'mlsExemption'                        | Medicare levy exemption          |
 -- +---------------------------------------+----------------------------------+
--- | 'helpBalance'                         | HELP account balance             |
+-- | 'helpBalance'                         | HELP, VSL, SSL, ABSTUDY SSL,     |
+-- |                                       | and TSL account balance          |
 -- +---------------------------------------+----------------------------------+
 -- | 'sfssBalance'                         | SFSS account balance             |
 -- +---------------------------------------+----------------------------------+
 -- | 'paymentSummaries'                    | PAYG payment summaries           |
 -- +---------------------------------------+----------------------------------+
--- | 'interest'                            | Interest data                    |
+-- | 'interest'                            | Interest income and tax withheld |
 -- +---------------------------------------+----------------------------------+
 -- | 'dividends'                           | Dividend data                    |
 -- +---------------------------------------+----------------------------------+
@@ -308,9 +309,16 @@ instance HasCapitalLossCarryForward (TaxReturnInfo y) a where
   capitalLossCarryForward = lens _triCapitalLossCarryForward
       (\s b -> s { _triCapitalLossCarryForward = b })
 
+-- | HELP, VSL, SSL, ABSTUDY SSL, and TSL account balance.
 helpBalance :: Lens' (TaxReturnInfo y a) (Money a)
 helpBalance = lens _helpBalance (\s b -> s { _helpBalance = b })
 
+-- | SFSS account balance.  From 1 July 2019, all study and training
+-- loans are covered by one set of threshold and rates.  Since then,
+-- you can specify your entire study and training loan balance via
+-- 'helpBalance'.  But it will still calculate correctly if you specify
+-- your SFSS balance separately.
+--
 sfssBalance :: Lens' (TaxReturnInfo y a) (Money a)
 sfssBalance = lens _sfssBalance (\s b -> s { _sfssBalance = b })
 
@@ -454,6 +462,8 @@ instance (RealFrac a) => HasTaxableIncome (TaxReturnInfo y) a a where
     in
       wholeDollars (gross $-$ views deductions totalDeductions info)
 
+-- | Includes PAYG withholding by employer or bank.
+-- Does not include franking credits.
 instance (Num a) => HasTaxWithheld (TaxReturnInfo y) a a where
   taxWithheld = to $ \info ->
     view (paymentSummaries . taxWithheld) info
@@ -671,10 +681,42 @@ paygInstalments = lens _paygInstalments (\s b -> s { _paygInstalments = b })
 
 -- | Deductions that individuals can claim.
 --
--- The only "special case" field is 'foreignIncomeDeductions', which is
--- the aggregate amount of /other/ deductions that pertains to foreign
--- income.  It is used only for calculating the Foreign Income Tax Offset
--- Limit.
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'workRelatedCarExpenses'                                               | __D1__ Work-related car expenses                                                       |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'workRelatedTravelExpenses'                                            | __D2__ Work-related travel expenses                                                    |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'workRelatedClothingLaundryAndDryCleaningExpenses'                     | __D3__ Work-related clothing, laundry and dry-cleaning expenses                        |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'workRelatedSelfEducationExpenses'                                     | __D4__ Work-related self-education expenses                                            |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'otherWorkRelatedExpenses'                                             | __D5__ Other work-related expenses                                                     |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'lowValuePoolDeduction'                                                | __D6__ Low-value pool deduction                                                        |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'interestDeductions'                                                   | __D7__ Interest deductions                                                             |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'dividendDeductions'                                                   | __D8__ Dividend deductions                                                             |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'giftsOrDonations'                                                     | __D9__ Gifts or donations                                                              |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'costOfManagingTaxAffairs'                                             | __D10__ Cost of managing tax affairs                                                   |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'deductibleAmountOfUndeductedPurchasePriceOfAForeignPensionOrAnnuity'  | __D11__ Deductible amount of undeducted purchase price of a foreign pension or annuity |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'personalSuperannuationContributions'                                  | __D12__ Personal superannuation contributions                                          |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'deductionForProjectPool'                                              | __D13__ Deduction for project pool                                                     |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'forestryManagedInvestmentSchemeDeduction'                             | __D14__ Forestry managed investment scheme deduction                                   |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'otherDeductions'                                                      | __D15__ Other deductions — not claimable at __D1__ to __D14__ or elsewhere in your tax |
+-- |                                                                        | return                                                                                 |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
+-- | 'foreignIncomeDeductions'                                              | Aggregate of deductions related to foreign income.  The components making up this      |
+-- |                                                                        | amount __must be included in the other fields__.  This field is only used in           |
+-- |                                                                        | calculating the Foreign Income Tax Offset Limit.                                       |
+-- +------------------------------------------------------------------------+----------------------------------------------------------------------------------------+
 --
 data Deductions a = Deductions
   { _workRelatedCarExpenses :: Money a
@@ -845,6 +887,26 @@ instance HasTaxWithheld GrossAndWithheld a a where
 
 
 -- | Employee share scheme statement.  Use 'newESSStatement' to construct.
+-- The following lenses are available:
+--
+-- +------------------------------+--------------------------------------------+
+-- | 'essTaxedUpfrontReduction'   | __D__ Discount from taxed up front         |
+-- |                              | schemes—eligible for reduction             |
+-- +------------------------------+--------------------------------------------+
+-- | 'essTaxedUpfrontNoReduction' | __E__ Discount from taxed up front         |
+-- |                              | schemes—not eligible for reduction         |
+-- +------------------------------+--------------------------------------------+
+-- | 'essDeferral'                | __F__ Discount from taxed deferral schemes |
+-- +------------------------------+--------------------------------------------+
+-- | 'essPre2009'                 | __G__ Discounts on ESS interests acquired  |
+-- |                              | pre 1 July 2009 and "cessation time"       |
+-- |                              | occurred during the financial year.        |
+-- +------------------------------+--------------------------------------------+
+-- | 'essTFNAmounts'              | __C__ TFN amounts withheld from discounts  |
+-- +------------------------------+--------------------------------------------+
+-- | 'essForeignSourceDiscounts'  | __A__ ESS foreign source discounts         |
+-- +------------------------------+--------------------------------------------+
+--
 data ESSStatement a = ESSStatement
   { _taxedUpfrontReduction :: Money a
   , _taxedUpfrontNoReduction :: Money a
