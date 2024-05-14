@@ -16,7 +16,7 @@
 
 {-# LANGUAGE DataKinds #-}
 
--- | Tax tables for 2022–23 financial year.
+-- | Tax tables for 2023–24 financial year.
 module Data.Tax.ATO.FY.FY2024 (FY, fyProxy, tables) where
 
 import Data.Proxy
@@ -61,7 +61,7 @@ tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   (ttIndividualIncomeTax FY2023.tables)
 
-  (medicareLevy (Money 24276))  -- TODO awaiting budget
+  (medicareLevy (Money 26000))
 
   medicareLevySurcharge
   help

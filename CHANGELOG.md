@@ -1,4 +1,4 @@
-## Version 2023.3
+## Version 2024.1
 
 - The minimum supported version of GHC is now 9.2, due to a
   dependency on more recent versions of the *time* library.
@@ -32,8 +32,7 @@
 
 - Add `Functor` instance for `CGTEvent`.
 
-- Add *non-final* `FY2024` module.  Previous year values are used
-  for some thresholds and rates that are yet to be declared.
+- Add `FY2024` module.
 
 - Add `Data.Tax.ATO.Pretty` module, which provides pretty printers
   for `TaxReturnInfo`, `TaxAssessment`, and other data types.
