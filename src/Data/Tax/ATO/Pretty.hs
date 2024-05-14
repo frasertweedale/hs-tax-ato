@@ -153,7 +153,8 @@ summariseAssessment assessment =
     , ("Medicare levy (and surcharge, if any)"      , view medicareLevyDue assessment)
     , ("Study and training loan repayment"          , view studyAndTrainingLoanRepayment assessment)
     , ("Excess private health reduction or refund"  , view privateHealthInsuranceRebateAdjustment assessment)
-    , ("Less tax withheld"                          , views taxWithheld (fmap negate) assessment)
+    , ("Less PAYG withholding"                      , views taxWithheld (fmap negate) assessment)
+    , ("Less PAYG instalments"                      , views paygInstalmentsCredit (fmap negate) assessment)
     ]
   P.$+$ P.text (replicate 80 '-')
   P.$+$ "Result of this notice" P.$$ P.nest colWidthLabel (views taxBalance formatMoney assessment)

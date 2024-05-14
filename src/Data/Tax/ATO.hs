@@ -136,6 +136,7 @@ module Data.Tax.ATO
   , medicareLevyDue
   , studyAndTrainingLoanRepayment
   , taxCreditsAndOffsets
+  , paygInstalmentsCredit
   , taxCGTAssessment
   , privateHealthInsuranceRebateAdjustment
 
@@ -372,6 +373,7 @@ data TaxAssessment a = TaxAssessment
   , _taCGTAssessment :: CGTAssessment a
   , _phiAdj :: Money a
   , _studyAndTrainingLoanRepayment :: Money a
+  , _paygInstalmentsCredit :: Money a
   }
 
 instance HasTaxableIncome TaxAssessment a a where
@@ -399,6 +401,10 @@ studyAndTrainingLoanRepayment =
 privateHealthInsuranceRebateAdjustment :: Lens' (TaxAssessment a) (Money a)
 privateHealthInsuranceRebateAdjustment = lens _phiAdj (\s b -> s { _phiAdj = b })
 
+paygInstalmentsCredit :: Lens' (TaxAssessment a) (Money a)
+paygInstalmentsCredit =
+  lens _paygInstalmentsCredit (\s b -> s { _paygInstalmentsCredit = b })
+
 -- | What is the balance of the assessment?  Positive means a
 -- refund (tax withheld exceeds obligation), negative means a bill.
 taxBalance :: Num a => Getter (TaxAssessment a) (Money a)
@@ -409,6 +415,7 @@ taxBalance = to $ \a ->
   $-$ view studyAndTrainingLoanRepayment a
   $-$ view privateHealthInsuranceRebateAdjustment a
   $+$ view taxCreditsAndOffsets a
+  $+$ view paygInstalmentsCredit a
 
 instance (Num a, Eq a) => HasCapitalLossCarryForward TaxAssessment a where
   capitalLossCarryForward = taxCGTAssessment . capitalLossCarryForward
@@ -526,7 +533,6 @@ assessTax tables info =
     off =
       view (offsets . spouseContributionOffset) info
       <> min (view (offsets . foreignTaxOffset) info) foreignIncomeTaxOffsetLimit
-      <> view (offsets . paygInstalments) info
 
   in
     TaxAssessment
@@ -538,6 +544,7 @@ assessTax tables info =
       cg
       phiAdj
       studyRepayment
+      (view (offsets . paygInstalments) info)
 
 -- | Australian Business Number
 type ABN = String
