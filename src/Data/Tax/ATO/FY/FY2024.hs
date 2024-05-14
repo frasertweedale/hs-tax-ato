@@ -69,5 +69,6 @@ tables = TaxTables
 
   lowIncomeTaxOffset2021
 
-  -- TODO adjustment factor will be released in april
+  -- Rebate adjustment factor = 1.000 (no change)
+  -- https://www.health.gov.au/news/phi-circulars/phi-1724-private-health-insurance-rebate-adjustment-factor-effective-1-april-2024
   (ttPHIRebateRates FY2023.tables)
