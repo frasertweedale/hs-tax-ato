@@ -679,6 +679,9 @@ instance (RealFrac a) => HasTaxableIncome Dividend a a where
 --
 -- Does not perform rounding.
 --
+-- For franking at the standard corporate tax rate of 30%, you can
+-- use the convenience function 'dividendFromNetFranked30'.
+--
 dividendFromNetFranked
   :: (Fractional a)
   => String         -- ^ Source name (e.g. ticker)
@@ -698,6 +701,8 @@ dividendFromNetFranked src date net franked rate =
 -- of the dividend franked at the 30% corporate tax rate.
 --
 -- Does not perform rounding.
+--
+-- For franking at a tax rate other than 30%, use 'dividendFromNetFranked'.
 --
 dividendFromNetFranked30
   :: (Fractional a)
