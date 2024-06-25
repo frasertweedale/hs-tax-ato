@@ -35,6 +35,9 @@ and variations based on family income and dependents.
 
 module Data.Tax.ATO
   (
+  -- * Synopsis
+  -- $synopsis
+
   -- * Individual tax returns
     TaxReturnInfo
   , newTaxReturnInfo
@@ -163,6 +166,84 @@ import Data.Tax.ATO.Common
 import Data.Tax.ATO.FY
 import Data.Tax.ATO.PrivateHealthInsuranceRebate
 import Data.Tax.ATO.Rounding
+
+{- $synopsis
+
+@
+{-# LANGUAGE DataKinds #-}
+
+import Control.Lens
+import Data.Time
+import Text.PrettyPrint (render)
+
+import Data.Tax.ATO
+import "Data.Tax.ATO.CGT"
+import "Data.Tax.ATO.Pretty"
+
+-- Import the tables for the financial year ending 30 June 2024
+import qualified "Data.Tax.ATO.FY.FY2024" as FY
+
+-- Convenience function for parsing a Data.Time.Day
+day :: String -> Day
+day = parseTimeOrError False defaultTimeLocale "%Y-%m-%d"
+
+main :: IO ()
+main = do
+  let assessment = 'assessTax' FY.tables taxReturn
+  putStrLn . render $ 'Data.Tax.ATO.Pretty.summariseTaxReturnInfo' taxReturn
+  putStrLn ""
+  putStrLn . render $ 'Data.Tax.ATO.Pretty.summariseAssessment' assessment
+
+taxReturn :: 'TaxReturnInfo' FY.FY Rational
+taxReturn = 'newTaxReturnInfo'
+  & set 'paymentSummaries'
+      [ 'PaymentSummary'
+          "1234567890"      -- ABN
+          (Money $ 180000)  -- Gross payments
+          (Money 50000)     -- Tax withheld
+          mempty            -- Reportable super contributions
+      ]
+
+  & set 'cgtEvents'
+      [ 'CGTEvent'
+          \"CODE\"             -- asset identifier (arbitrary string)
+          10                 -- number of units (may be fractional)
+          (day "2014-01-01") -- acquisition date
+          (Money 30)         -- acquisition price
+          (Money 20)         -- acquisition cost (brokerage)
+          (day "2024-03-01") -- disposal date
+          (Money 300)        -- disposal price
+          (Money 20)         -- disposal cost (brokerage)
+          mempty             -- capital costs
+          mempty             -- costs of ownership
+      ]
+
+  & set 'dividends'
+      [ 'dividendFromNetFranked30'
+          \"CODE\"
+          (day "2023-09-01")  -- payment date
+          (Money 70)          -- net payment
+          ('proportion' 1)      -- franking proportion (1 = 100%)
+      ]
+
+  & set 'helpBalance' (Money 10000)
+
+  & set 'privateHealthInsurancePolicyDetails'
+      [ 'PrivateHealthInsurancePolicyDetail'
+          \"MBF\"
+          "98765432"  -- policy number
+          (Money 750) -- premiums eligible for rebate
+          (Money 180) -- rebate received
+          'BenefitCode30'
+      , 'PrivateHealthInsurancePolicyDetail'
+          "MBF" "98765432" (Money 250) (Money  60) 'BenefitCode31'
+      ]
+
+  & set ('deductions' . 'workRelatedTravelExpenses') (Money 1000)
+  & set ('deductions' . 'personalSuperannuationContributions') (Money 5000)
+@
+
+-}
 
 -- | Data that can have an amount of tax withheld
 class HasTaxWithheld a b c where
