@@ -6,18 +6,27 @@
   assets, and the `declineInValue` function for calculating the
   decline in value in a given financial year.
 
-- Added some new helper functions to the `Data.Tax.ATO.FY` module:
-  - `fromProxy :: (FinancialYear y) => Proxy y -> Year`
-  - `daysInYear :: Year -> Integer`
-  - `daysInYearFromProxy :: FinancialYear y => Proxy y -> Integer`
-
 - Implement Medicare levy low income family thresholds, including
   increase based on number of dependents.  Senior and pensioners
   individual and family thresholds remain unimplemented.
 
-- Fix FY2024 private health insurance rebate tier thresholds.
+- CGT assessment types were overhauled and now contain more
+  information about total capital gain and applied / unapplied
+  losses.  This is step toward a more complete CGT implementation.
+  Remaining gaps include foreign withholding credits and separate
+  treatment of collectables.
+
+- `TaxReturnInfo` pretty printing now includes more detailed ESS and
+  CGT data, to help with preparation of tax returns.
 
 - Add `FY2025` module.  All rates and thresholds are up to date.
+
+- Fix FY2024 private health insurance rebate tier thresholds.
+
+- Added some new helper functions to the `Data.Tax.ATO.FY` module:
+  - `fromProxy :: (FinancialYear y) => Proxy y -> Year`
+  - `daysInYear :: Year -> Integer`
+  - `daysInYearFromProxy :: FinancialYear y => Proxy y -> Integer`
 
 
 ## Version 2024.1

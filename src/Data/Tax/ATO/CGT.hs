@@ -37,11 +37,12 @@ module Data.Tax.ATO.CGT
 
   -- * CGT assessments for tax returns
   , assessCGTEvents
-  , CGTAssessment(CGTAssessment)
-  , CGTNetGainOrLoss(..)
+  , CGTAssessment
+  , nullCGTAssessment
   , HasCapitalLossCarryForward(..)
-  , cgtNetGainOrLoss
   , cgtNetGain
+  , cgtTotalCurrentYearGains
+  , cgtNetLossesCarriedForward
 
   -- * CGT computations
   , HasCapitalGain(..)
@@ -49,7 +50,6 @@ module Data.Tax.ATO.CGT
   , isCapitalGain
   , isCapitalLoss
   , discountApplicable
-  , netCapitalGainOrLoss
   ) where
 
 import Data.Foldable (toList)
@@ -139,34 +139,6 @@ instance (Foldable t, HasCapitalGain x a a, Num a) => HasCapitalGain t (x a) a w
   capitalGain = to (foldMap (view capitalGain))
 
 
-
--- | Compute the /discounted/ gain or carry-forward loss
---
--- Losses are used to offset non-discountable capital gains
--- first, then discountable gains, before the discount is applied
--- to discountable gains.
---
--- *Does not implement the indexation method for cost-base reduction!*
---
-netCapitalGainOrLoss
-  :: (Fractional a, Ord a, Foldable t)
-  => Money a                     -- ^ loss carried forward
-  -> t (CGTEvent a)              -- ^ CGT events
-  -> CGTNetGainOrLoss a
-netCapitalGainOrLoss carry events =
-  let
-    l = toList events
-    (discountableGain, nonDiscountableGain) =
-      over both (view capitalGain) (partition discountApplicable l)
-    loss = foldMap capitalLoss l
-    (nonDiscLessLoss, remLoss) = sub nonDiscountableGain (loss <> carry)
-    (discLessLoss, finalLoss) = sub discountableGain remLoss
-    discGain = nonDiscLessLoss <> (discLessLoss $* 0.5)
-  in
-    if discGain > mempty
-    then CGTNetGain discGain
-    else CGTLoss finalLoss
-
 -- | @sub x y@ = subtract @y@ from @x@, clamping to 0 and
 -- returning @(result, leftovers)@
 --
@@ -176,56 +148,88 @@ sub x y =
   in (max mempty r, over money abs (min mempty r))
 
 -- | Assess the total capital gains and net capital gain or loss.
+--
+-- Losses are used to offset non-discountable capital gains
+-- first, then discountable gains, before the discount is applied
+-- to discountable gains.
+--
+-- __Does not implement the indexation method for cost-base reduction.__
+--
 assessCGTEvents
   :: (Fractional a, Ord a, Foldable t)
   => Money a            -- ^ capital loss carried forward
   -> t (CGTEvent a)
   -> CGTAssessment a
-assessCGTEvents carry evs = CGTAssessment
-  (view capitalGain evs)
-  (netCapitalGainOrLoss carry evs)
+assessCGTEvents carry events =
+  let
+    l = toList events
+    (discountableGain, nonDiscountableGain) =
+      over both (view capitalGain) (partition discountApplicable l)
+    totalGain = discountableGain <> nonDiscountableGain
+    totalLoss = foldMap capitalLoss l
+    (nonDiscountableGainLossesApplied, unappliedLosses) = sub nonDiscountableGain (totalLoss <> carry)
+    (discountableGainLossesApplied, finalUnappliedLosses) = sub discountableGain unappliedLosses
+    discount = discountableGainLossesApplied $* 0.5
+    discountedGain = nonDiscountableGainLossesApplied <> (discountableGainLossesApplied $-$ discount)
+
+    lossesApplied = (totalLoss <> carry) $-$ finalUnappliedLosses
+    priorYearLossesApplied = min carry lossesApplied
+    currentYearLossesApplied = lossesApplied $-$ priorYearLossesApplied
+  in
+    CGTAssessment
+      totalGain
+      totalLoss
+      currentYearLossesApplied
+      priorYearLossesApplied
+      finalUnappliedLosses
+      discount
+      discountedGain
 
 -- | Total undiscounted gains and net gain/loss for tax assessment
 data CGTAssessment a = CGTAssessment
-  { _cgtaTotal :: Money a
-  , _cgtaNet :: CGTNetGainOrLoss a
+  { _totalCurrentYearCapitalGains :: Money a
+  , _totalCurrentYearCapitalLosses :: Money a
+  , _totalCurrentYearCapitalLossesApplied :: Money a
+  , _totalPriorYearCapitalLossesApplied :: Money a
+  , _netCapitalLossesCarriedForward :: Money a
+  , _totalCGTDiscountApplied :: Money a
+  , _netCapitalGain :: Money a
   }
-  deriving (Show)
+  deriving (Eq)
+
+-- | A 'CGTAssessment' whose values are all zero
+nullCGTAssessment :: (Num a) => CGTAssessment a
+nullCGTAssessment = CGTAssessment mempty mempty mempty mempty mempty mempty mempty
 
 instance Functor CGTAssessment where
-  fmap f (CGTAssessment a b) = CGTAssessment (fmap f a) (fmap f b)
+  fmap f (CGTAssessment a b c d e g h) = CGTAssessment
+    (fmap f a)
+    (fmap f b)
+    (fmap f c)
+    (fmap f d)
+    (fmap f e)
+    (fmap f g)
+    (fmap f h)
 
-instance HasCapitalGain CGTAssessment a a where
-  capitalGain = to _cgtaTotal
+-- | __18A__ The net capital gain, or zero if a loss.
+cgtNetGain :: Lens' (CGTAssessment a) (Money a)
+cgtNetGain = lens _netCapitalGain (\s b -> s { _netCapitalGain = b })
 
--- | The 'CGTNetGainOrLoss' value of the 'CGTAssessment'
-cgtNetGainOrLoss :: Lens' (CGTAssessment a) (CGTNetGainOrLoss a)
-cgtNetGainOrLoss = lens _cgtaNet (\s b -> s { _cgtaNet = b })
+-- | __18H__ Total current year capital gains
+cgtTotalCurrentYearGains :: Lens' (CGTAssessment a) (Money a)
+cgtTotalCurrentYearGains =
+  lens _totalCurrentYearCapitalGains (\s b -> s { _totalCurrentYearCapitalGains = b })
 
--- | The net capital gain, or zero if a loss.
-cgtNetGain :: (Num a) => Getter (CGTAssessment a) (Money a)
-cgtNetGain = cgtNetGainOrLoss . to f
-  where
-  f (CGTNetGain a) = a
-  f _ = mempty
-
--- | A net (loss offset, discounted) gain, or the loss amount
-data CGTNetGainOrLoss a = CGTNetGain (Money a) | CGTLoss (Money a)
-  deriving (Show)
-
-instance Functor CGTNetGainOrLoss where
-  fmap f (CGTNetGain a) = CGTNetGain (fmap f a)
-  fmap f (CGTLoss a)    = CGTLoss (fmap f a)
+-- | __18V__ Net capital losses carried forward to later income years
+cgtNetLossesCarriedForward :: Lens' (CGTAssessment a) (Money a)
+cgtNetLossesCarriedForward =
+  lens _netCapitalLossesCarriedForward (\s b -> s { _netCapitalLossesCarriedForward = b })
 
 -- | Types that have a carry-forward capital loss (either as an
 -- input or an output).
 class HasCapitalLossCarryForward a b where
   capitalLossCarryForward :: Lens' (a b) (Money b)
 
-instance (Num a, Eq a) => HasCapitalLossCarryForward CGTNetGainOrLoss a where
-  capitalLossCarryForward = lens
-    (\s -> case s of CGTLoss a -> a ; _ -> mempty)
-    (\s b -> if b == mempty then s else CGTLoss b)
-
-instance (Num a, Eq a) => HasCapitalLossCarryForward CGTAssessment a where
-  capitalLossCarryForward = cgtNetGainOrLoss . capitalLossCarryForward
+instance HasCapitalLossCarryForward CGTAssessment a where
+  capitalLossCarryForward =
+    lens _netCapitalLossesCarriedForward (\s b -> s { _netCapitalLossesCarriedForward = b })

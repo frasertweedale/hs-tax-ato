@@ -27,7 +27,6 @@ Monetary values are rounded to the nearest whole cent (half-up).
 module Data.Tax.ATO.Pretty
   ( summariseTaxReturnInfo
   , summariseAssessment
-  , summariseCGTAssessment
   ) where
 
 import Data.Function (on)
@@ -87,6 +86,7 @@ summariseTaxReturnInfo info =
   P.$+$ "  11  Dividends"
   P.$+$ views dividends summariseDividends info
   P.$+$ views ess summariseESS info
+  P.$+$ summariseCGT info
   P.$+$ vcatWith twoCol
     [ ("  20M Other net foreign source income" , view foreignIncome info)
     ]
@@ -122,6 +122,19 @@ summariseESS s
         , threeColLeft ("    C TFN amounts withheld from discounts", view essTFNAmounts s)
         , twoCol ("    A Foreign source discounts", view essForeignSourceDiscounts s)
         ]
+
+summariseCGT :: TaxReturnInfo y Rational -> P.Doc
+summariseCGT info
+  | o == nullCGTAssessment = P.empty
+  | otherwise =
+      "  18  Capital gains"
+      P.$+$ P.vcat
+        [ twoCol        ("    A Net capital gain",                   view cgtNetGain o)
+        , threeColLeft  ("    H Total current year capital gains",   view cgtTotalCurrentYearGains o)
+        , threeColLeft  ("    V Net capital losses carried forward", view cgtNetLossesCarriedForward o)
+        ]
+  where
+    o = assessCGTEvents (view capitalLossCarryForward info) (view cgtEvents info)
 
 deductionsTable :: [(ALens' (Deductions Rational) (Money Rational), String)]
 deductionsTable =
@@ -178,9 +191,3 @@ summariseAssessment assessment =
   P.$+$ P.text (replicate 80 '-')
   P.$+$ "Result of this notice" P.$$ P.nest colWidthLabel (views taxBalance formatMoney assessment)
   P.$+$ "Net capital loss to carry forward" P.$$ P.nest colWidthLabel (views (taxCGTAssessment . capitalLossCarryForward) formatMoney assessment)
-
-summariseCGTAssessment :: CGTAssessment Rational -> P.Doc
-summariseCGTAssessment cgtAss@(CGTAssessment total _) =
-  "Total FY capital gains" P.$$ (P.nest colWidthLabel . formatMoney) total
-  P.$+$ "Net capital gain" P.$$ P.nest colWidthLabel (views cgtNetGain formatMoney cgtAss)
-  P.$+$ "Net capital loss to carry forward" P.$$ P.nest colWidthLabel (views capitalLossCarryForward formatMoney cgtAss)

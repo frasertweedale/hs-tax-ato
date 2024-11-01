@@ -500,7 +500,7 @@ taxBalance = to $ \a ->
   $+$ view taxCreditsAndOffsets a
   $+$ view paygInstalmentsCredit a
 
-instance (Num a, Eq a) => HasCapitalLossCarryForward TaxAssessment a where
+instance HasCapitalLossCarryForward TaxAssessment a where
   capitalLossCarryForward = taxCGTAssessment . capitalLossCarryForward
 
 
