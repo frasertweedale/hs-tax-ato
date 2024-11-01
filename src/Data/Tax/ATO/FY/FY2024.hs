@@ -22,6 +22,7 @@ module Data.Tax.ATO.FY.FY2024 (FY, fyProxy, tables) where
 import Data.Proxy
 import Data.Tax
 import Data.Tax.ATO.Common
+import Data.Tax.ATO.PrivateHealthInsuranceRebate
 import qualified Data.Tax.ATO.FY.FY2023 as FY2023
 
 type FY = 2024
@@ -57,6 +58,17 @@ medicareLevySurcharge =
   <> threshold (Money 108000) 0.0025
   <> threshold (Money 144000) 0.0025
 
+-- Rebate adjustment factor = 1.000 (no change)
+-- https://www.health.gov.au/news/phi-circulars/phi-1724-private-health-insurance-rebate-adjustment-factor-effective-1-april-2024
+-- However, the /thresholds/ did change this year.
+privateHealthInsuranceRebateRates
+  :: (Fractional a) => PrivateHealthInsuranceRebateRates a
+privateHealthInsuranceRebateRates =
+  [ ( 93000, (0.24608, 0.24608), (0.28710, 0.28710), (0.32812, 0.32812) )
+  , (108000, (0.16405, 0.16405), (0.20507, 0.20507), (0.24608, 0.24608) )
+  , (144000, (0.08202, 0.08202), (0.12303, 0.12303), (0.16405, 0.16405) )
+  ]
+
 tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   (ttIndividualIncomeTax FY2023.tables)
@@ -69,6 +81,4 @@ tables = TaxTables
 
   lowIncomeTaxOffset2021
 
-  -- Rebate adjustment factor = 1.000 (no change)
-  -- https://www.health.gov.au/news/phi-circulars/phi-1724-private-health-insurance-rebate-adjustment-factor-effective-1-april-2024
-  (ttPHIRebateRates FY2023.tables)
+  privateHealthInsuranceRebateRates

@@ -1,5 +1,7 @@
 ## Version NEXT
 
+- Fix FY2024 private health insurance rebate tier thresholds.
+
 - Add *non-final* `FY2025` module.  Previous year values are used
   for some thresholds and rates that are yet to be declared.
 
