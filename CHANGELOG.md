@@ -1,5 +1,16 @@
 ## Version NEXT
 
+- New module `Data.Tax.ATO.Depreciation` provides types and
+  functions for calculating decline in value (for deductions).
+  Use the `DepreciatingAsset` data type to define depreciating
+  assets, and the `declineInValue` function for calculating the
+  decline in value in a given financial year.
+
+- Added some new helper functions to the `Data.Tax.ATO.FY` module:
+  - `fromProxy :: (FinancialYear y) => Proxy y -> Year`
+  - `daysInYear :: Year -> Integer`
+  - `daysInYearFromProxy :: FinancialYear y => Proxy y -> Integer`
+
 - Fix FY2024 private health insurance rebate tier thresholds.
 
 - Add *non-final* `FY2025` module.  Previous year values are used

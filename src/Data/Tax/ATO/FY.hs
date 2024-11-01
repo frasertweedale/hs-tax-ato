@@ -33,9 +33,12 @@ module Data.Tax.ATO.FY
   , getDays
   , getFraction
   , FinancialYear
+  , fromProxy
   , financialYear
   , financialYearRange
   , financialYearRangeFromProxy
+  , daysInYear
+  , daysInYearFromProxy
   )
   where
 
@@ -47,10 +50,18 @@ import Data.Time.Calendar (Day, Year, fromGregorian, isLeapYear, toGregorian)
 
 type FinancialYear = KnownNat
 
-daysInYear :: KnownNat n => Proxy n -> Integer
-daysInYear proxy
-  | isLeapYear (natVal proxy) = 366
-  | otherwise                 = 365
+fromProxy :: (FinancialYear y) => Proxy y -> Year
+fromProxy = natVal
+
+-- | Number of days in the financial year ending June 30 of the given year.
+daysInYear :: Year -> Integer
+daysInYear y
+  | isLeapYear y  = 366
+  | otherwise     = 365
+
+-- | Number of days in the financial year ending June 30 (type-level variant).
+daysInYearFromProxy :: FinancialYear y => Proxy y -> Integer
+daysInYearFromProxy = daysInYear . natVal
 
 -- | Some number of days in a year.  Use 'days' to construct.
 newtype Days (n :: Nat) = Days
@@ -62,11 +73,11 @@ newtype Days (n :: Nat) = Days
 -- | Construct a 'Days' value.  If out of range, the number of days
 -- is clamped to 0 or 365/366 (no runtime errors).
 days :: forall a. (FinancialYear a) => Integer -> Days a
-days = Days . max 0 . min (daysInYear (Proxy :: Proxy a))
+days = Days . max 0 . min (daysInYearFromProxy (Proxy :: Proxy a))
 
 -- | Every day of the year
 daysAll :: forall a. (FinancialYear a) => Days a
-daysAll = Days (daysInYear (Proxy :: Proxy a))
+daysAll = Days (daysInYearFromProxy (Proxy :: Proxy a))
 
 -- | Zero days of the year
 daysNone :: Days a
@@ -76,7 +87,7 @@ daysNone = Days 0
 -- The denominator is determined by the year type.
 --
 getFraction :: forall a frac. (FinancialYear a, Fractional frac) => Days a -> frac
-getFraction n = fromRational $ getDays n % daysInYear (Proxy :: Proxy a)
+getFraction n = fromRational $ getDays n % daysInYearFromProxy (Proxy :: Proxy a)
 
 -- | The financial year in which the given day falls.
 --

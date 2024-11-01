@@ -153,6 +153,7 @@ module Data.Tax.ATO
   , getProportion
   , proportion
   , module Data.Tax
+  , module Data.Tax.ATO.Depreciation
   , module Data.Tax.ATO.PrivateHealthInsuranceRebate
   , module Data.Tax.ATO.Rounding
   ) where
@@ -163,6 +164,7 @@ import Data.Time (Day)
 import Data.Tax
 import Data.Tax.ATO.CGT
 import Data.Tax.ATO.Common
+import Data.Tax.ATO.Depreciation
 import Data.Tax.ATO.FY
 import Data.Tax.ATO.PrivateHealthInsuranceRebate
 import Data.Tax.ATO.Rounding
