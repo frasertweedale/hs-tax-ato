@@ -20,7 +20,6 @@
 module Data.Tax.ATO.FY.FY2020 (FY, fyProxy, tables) where
 
 import Data.Proxy
-import Control.Lens (review)
 
 import Data.Tax
 import Data.Tax.ATO.Common
@@ -53,6 +52,16 @@ help = thresholds'
   , (134573, 0.005)
   ]
 
+medicare :: (Fractional a) => MedicareLevyRatesAndThresholds a
+medicare = MedicareLevyRatesAndThresholds
+  { medicareLevyRate                                  = 0.02
+  , medicareLevyThresholdIndividual                   = Money 22801
+  , medicareLevyThresholdIndividualSeniorAndPensioner = Money 36056
+  , medicareLevyThresholdFamily                       = Money 38474
+  , medicareLevyThresholdFamilySeniorAndPensioner     = Money 50191
+  , medicareLevyThresholdDependentChildIncrease       = Money  3533
+  }
+
 -- | From 1 July 2019, all study and training loans are covered by
 -- one set of thresholds and rates.  For backwards compatibility,
 -- 'ttHelp' and 'ttSfss' now refer to the same value.
@@ -60,7 +69,7 @@ help = thresholds'
 tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   (ttIndividualIncomeTax FY2019.tables)
-  (medicareLevy (review money 22801))
+  medicare
   (ttMedicareLevySurcharge FY2019.tables)
   help
   help

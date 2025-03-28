@@ -19,7 +19,6 @@
 -- | Tax tables for 2016–17 financial year.
 module Data.Tax.ATO.FY.FY2017 (tables, individualIncomeTax) where
 
-import Control.Lens (review)
 import Data.Tax
 import Data.Tax.ATO.Common
 import Data.Tax.ATO.PrivateHealthInsuranceRebate
@@ -34,7 +33,7 @@ individualIncomeTax = marginal'
   , (180000, 0.45 - 0.37) ]
 
 temporaryBudgetRepairLevy :: (Fractional a, Ord a) => Tax (Money a) (Money a)
-temporaryBudgetRepairLevy = above (review money 180000) 0.02
+temporaryBudgetRepairLevy = above (Money 180000) 0.02
 
 help, sfss :: (Fractional a, Ord a) => Tax (Money a) (Money a)
 help = thresholds'
@@ -42,6 +41,16 @@ help = thresholds'
   , (61120, 0.005), (67369, 0.005), (70910, 0.005), (76223, 0.005)
   , (82551, 0.005), (86895, 0.005), (95627, 0.005), (101900, 0.005) ]
 sfss = thresholds' [(54869, 0.02), (67369, 0.01), (95627, 0.01)]
+
+medicare :: (Fractional a) => MedicareLevyRatesAndThresholds a
+medicare = MedicareLevyRatesAndThresholds
+  { medicareLevyRate                                  = 0.02
+  , medicareLevyThresholdIndividual                   = Money 21655
+  , medicareLevyThresholdIndividualSeniorAndPensioner = Money 34244
+  , medicareLevyThresholdFamily                       = Money 36541
+  , medicareLevyThresholdFamilySeniorAndPensioner     = Money 47670
+  , medicareLevyThresholdDependentChildIncrease       = Money  3356
+  }
 
 -- | /Medicare levy surcharge (MLS)/.  Certain exemptions are available.
 --
@@ -64,7 +73,7 @@ medicareLevySurcharge =
 tables :: (Ord a, Fractional a) => TaxTables 2017 a
 tables = TaxTables
   (individualIncomeTax <> temporaryBudgetRepairLevy)
-  (medicareLevy (review money 21656))
+  medicare
   medicareLevySurcharge
   help
   sfss

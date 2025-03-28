@@ -50,11 +50,20 @@ help = thresholds'
   , (141848, 0.005)
   ]
 
+medicare :: (Fractional a) => MedicareLevyRatesAndThresholds a
+medicare = MedicareLevyRatesAndThresholds
+  { medicareLevyRate                                  = 0.02
+  , medicareLevyThresholdIndividual                   = Money 24276
+  , medicareLevyThresholdIndividualSeniorAndPensioner = Money 38365
+  , medicareLevyThresholdFamily                       = Money 40939
+  , medicareLevyThresholdFamilySeniorAndPensioner     = Money 53406
+  , medicareLevyThresholdDependentChildIncrease       = Money  3760
+  }
+
 tables :: (Ord a, Fractional a) => TaxTables 2023 a
 tables = TaxTables
   (ttIndividualIncomeTax FY2022.tables)
-
-  (medicareLevy (Money 24276))
+  medicare
   (ttMedicareLevySurcharge FY2022.tables)
 
   help

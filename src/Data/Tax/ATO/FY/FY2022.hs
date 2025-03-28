@@ -20,7 +20,6 @@
 module Data.Tax.ATO.FY.FY2022 (FY, fyProxy, tables) where
 
 import Data.Proxy
-import Control.Lens (review)
 
 import Data.Tax
 import Data.Tax.ATO.Common
@@ -53,10 +52,20 @@ help = thresholds'
   , (137898, 0.005)
   ]
 
+medicare :: (Fractional a) => MedicareLevyRatesAndThresholds a
+medicare = MedicareLevyRatesAndThresholds
+  { medicareLevyRate                                  = 0.02
+  , medicareLevyThresholdIndividual                   = Money 23365
+  , medicareLevyThresholdIndividualSeniorAndPensioner = Money 36925
+  , medicareLevyThresholdFamily                       = Money 39402
+  , medicareLevyThresholdFamilySeniorAndPensioner     = Money 51401
+  , medicareLevyThresholdDependentChildIncrease       = Money  3619
+  }
+
 tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   FY2021.individualIncomeTax
-  (medicareLevy (review money 23365))
+  medicare
   (ttMedicareLevySurcharge FY2021.tables)
   help
   help
@@ -75,7 +84,7 @@ privateHealthInsuranceRebateRates =
 -- | LMITO ceiling increased by $420 to $1500 in FY2022
 lmito2022 :: (Fractional a, Ord a) => Tax (Money a) (Money a)
 lmito2022 = limit mempty $
-  greaterOf (lump (review money (-1500)))
-    ( lump (review money (-255))
-    <> above (review money 37000) (-0.075) )
-  <> above (review money 90000) 0.03
+  greaterOf (lump (Money (-1500)))
+    ( lump (Money (-255))
+    <> above (Money 37000) (-0.075) )
+  <> above (Money 90000) 0.03

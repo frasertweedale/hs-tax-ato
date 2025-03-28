@@ -11,10 +11,15 @@
   - `daysInYear :: Year -> Integer`
   - `daysInYearFromProxy :: FinancialYear y => Proxy y -> Integer`
 
+- Implement Medicare levy low income family thresholds, including
+  increase based on number of dependents.  Senior and pensioners
+  individual and family thresholds remain unimplemented.
+
 - Fix FY2024 private health insurance rebate tier thresholds.
 
-- Add *non-final* `FY2025` module.  Previous year values are used
-  for some thresholds and rates that are yet to be declared.
+- Add *non-final* `FY2025` module.  The Medicare levy thresholds
+  are final but the private health insurance rebate adjustment
+  factor has not been updated yet.
 
 
 ## Version 2024.1

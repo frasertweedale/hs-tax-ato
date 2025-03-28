@@ -54,6 +54,16 @@ help = thresholds'
   , (159664, 0.005)
   ]
 
+medicare :: (Fractional a) => MedicareLevyRatesAndThresholds a
+medicare = MedicareLevyRatesAndThresholds
+  { medicareLevyRate                                  = 0.02
+  , medicareLevyThresholdIndividual                   = Money 27222
+  , medicareLevyThresholdIndividualSeniorAndPensioner = Money 43020
+  , medicareLevyThresholdFamily                       = Money 45907
+  , medicareLevyThresholdFamilySeniorAndPensioner     = Money 59886
+  , medicareLevyThresholdDependentChildIncrease       = Money  4216
+  }
+
 -- | Medicare levy surcharge thresholds changed for 2024–25
 medicareLevySurcharge :: (Fractional a, Ord a) => Tax (Money a) (Money a)
 medicareLevySurcharge =
@@ -82,9 +92,7 @@ privateHealthInsuranceRebateRates =
 tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   individualIncomeTax
-
-  (medicareLevy (Money 26000))  -- TODO NOT YET FINAL.  Waiting for budget.
-
+  medicare
   medicareLevySurcharge
   help
   help

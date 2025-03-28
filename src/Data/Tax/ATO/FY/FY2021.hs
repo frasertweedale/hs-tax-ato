@@ -20,7 +20,6 @@
 module Data.Tax.ATO.FY.FY2021 (FY, fyProxy, tables, individualIncomeTax) where
 
 import Data.Proxy
-import Control.Lens (review)
 
 import Data.Tax
 import Data.Tax.ATO.Common
@@ -63,10 +62,20 @@ help = thresholds'
   , (136740, 0.005)
   ]
 
+medicare :: (Fractional a) => MedicareLevyRatesAndThresholds a
+medicare = MedicareLevyRatesAndThresholds
+  { medicareLevyRate                                  = 0.02
+  , medicareLevyThresholdIndividual                   = Money 23226
+  , medicareLevyThresholdIndividualSeniorAndPensioner = Money 36705
+  , medicareLevyThresholdFamily                       = Money 39167
+  , medicareLevyThresholdFamilySeniorAndPensioner     = Money 51094
+  , medicareLevyThresholdDependentChildIncrease       = Money  3597
+  }
+
 tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   individualIncomeTax
-  (medicareLevy (review money 23226))
+  medicare
   (ttMedicareLevySurcharge FY2020.tables)
   help
   help

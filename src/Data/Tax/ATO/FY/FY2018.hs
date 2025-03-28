@@ -20,7 +20,6 @@
 module Data.Tax.ATO.FY.FY2018 (FY, fyProxy, tables) where
 
 import Data.Proxy
-import Control.Lens (review)
 import Data.Tax
 import Data.Tax.ATO.Common
 import Data.Tax.ATO.PrivateHealthInsuranceRebate
@@ -37,6 +36,16 @@ help = thresholds'
   , (84063, 0.005), (88487, 0.005), (97378, 0.005), (103766, 0.005) ]
 sfss = thresholds' [(55874, 0.02), (68603, 0.01), (97378, 0.01)]
 
+medicare :: (Fractional a) => MedicareLevyRatesAndThresholds a
+medicare = MedicareLevyRatesAndThresholds
+  { medicareLevyRate                                  = 0.02
+  , medicareLevyThresholdIndividual                   = Money 21980
+  , medicareLevyThresholdIndividualSeniorAndPensioner = Money 34758
+  , medicareLevyThresholdFamily                       = Money 37089
+  , medicareLevyThresholdFamilySeniorAndPensioner     = Money 48385
+  , medicareLevyThresholdDependentChildIncrease       = Money  3406
+  }
+
 -- | Individual tax rates unchanged from 2017.
 --
 -- The /temporary budget repair levy/ no longer applies.
@@ -44,7 +53,7 @@ sfss = thresholds' [(55874, 0.02), (68603, 0.01), (97378, 0.01)]
 tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   FY2017.individualIncomeTax
-  (medicareLevy (review money 21980))
+  medicare
   (ttMedicareLevySurcharge FY2017.tables)
   help
   sfss

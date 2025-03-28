@@ -32,6 +32,10 @@ module Data.Tax.ATO.Common
   -- * Classes
   , HasTaxableIncome(..)
 
+  -- * Medicare levy
+  , MedicareLevyRatesAndThresholds(..)
+  , medicareLevy'
+
   -- * Common taxes and helpers
   , medicareLevy
   , lowIncomeTaxOffset
@@ -53,7 +57,7 @@ import Data.Tax.ATO.PrivateHealthInsuranceRebate
 -- | A set of tax tables for a particular financial year
 data TaxTables y a = TaxTables
   { ttIndividualIncomeTax :: Tax (Money a) (Money a)
-  , ttMedicareLevy :: Tax (Money a) (Money a)
+  , ttMedicareLevyRatesAndThresholds :: MedicareLevyRatesAndThresholds a
   , ttMedicareLevySurcharge :: Tax (Money a) (Money a)
   , ttHelp :: Tax (Money a) (Money a)
   , ttSfss :: Tax (Money a) (Money a)
@@ -61,6 +65,40 @@ data TaxTables y a = TaxTables
   -- ^ Additional taxes and offsets that apply at EOY
   , ttPHIRebateRates :: PrivateHealthInsuranceRebateRates a
   }
+
+
+data MedicareLevyRatesAndThresholds a = MedicareLevyRatesAndThresholds
+  { medicareLevyRate :: a
+  , medicareLevyThresholdIndividual :: Money a
+  , medicareLevyThresholdIndividualSeniorAndPensioner :: Money a
+  , medicareLevyThresholdFamily :: Money a
+  , medicareLevyThresholdFamilySeniorAndPensioner :: Money a
+  , medicareLevyThresholdDependentChildIncrease :: Money a
+  }
+
+medicareLevy'
+  :: (Fractional a, Ord a)
+  => MedicareLevyRatesAndThresholds a
+  -> Money a          -- ^ taxable income
+  -> Maybe (Money a)  -- ^ spouse taxable income
+  -> Integer          -- ^ number of dependents
+  -> Money a
+medicareLevy' rates me mYou nDeps = case mYou of
+  Nothing | nDeps <= 0 ->
+    let
+      t = medicareLevyThresholdIndividual rates
+    in
+      getTax (mk t) me
+  _ ->
+    let
+      t = medicareLevyThresholdFamily rates
+          $+$ fromIntegral nDeps *$ medicareLevyThresholdDependentChildIncrease rates
+      combinedIncome = maybe me (me $+$) mYou
+    in
+      (me $/$ combinedIncome) *$ getTax (mk t) combinedIncome
+  where
+    mk l = lesserOf (above l 0.1) (flat (medicareLevyRate rates))
+
 
 -- | The Medicare levy, incorporating the Medicare levy reduction.
 -- The rate is 10% of the income above the given shade-in threshold

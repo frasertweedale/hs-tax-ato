@@ -1,7 +1,7 @@
 {-# LANGUAGE PolyKinds #-}
 
 -- This file is part of hs-tax-ato
--- Copyright (C) 2018-2021  Fraser Tweedale
+-- Copyright (C) 2018-2025  Fraser Tweedale
 --
 -- hs-tax-ato is free software: you can redistribute it and/or modify
 -- it under the terms of the GNU Affero General Public License as published by
@@ -25,7 +25,7 @@ No guarantee that computations are correct, complete or current.
 Lots of things are not implemented, including (but not limited to):
 __ETPs__, income from __partnerships and trusts__,
 __superannuation__ income streams and lump payments, tax losses from
-previous years, __Medicare levy reduction/exemption__, adjustments,
+previous years, Medicare levy exemptions, adjustments,
 and variations based on family income and dependents.
 
 -}
@@ -158,7 +158,7 @@ module Data.Tax.ATO
   , module Data.Tax.ATO.Rounding
   ) where
 
-import Control.Lens (Getter, Lens', (&), foldOf, lens, set, to, view, views)
+import Control.Lens (Getter, Lens', (&), foldOf, lens, preview, set, to, view, views)
 import Data.Time (Day)
 
 import Data.Tax
@@ -525,24 +525,6 @@ studyAndTrainingLoanRepaymentTax table info =
   limit (view helpBalance info) (ttHelp table)
   <> limit (view sfssBalance info) (ttSfss table)
 
--- | Medicare levy + surcharge
-medicareLevyTax
-  :: (FinancialYear y, Fractional a)
-  => TaxTables y a
-  -> TaxReturnInfo y a
-  -> Tax (Money a) (Money a)    -- grand unified individual income tax
-medicareLevyTax table info =
-  let
-    ml = ttMedicareLevy table
-    mls = ttMedicareLevySurcharge table
-    mlsFrac = 1 - getFraction (view mlsExemption info)
-  in
-    -- TODO medicare levy exemption
-    ml
-    -- FIXME income for MLS purposes includes
-    -- fringe benefits; family thresholds apply
-    <> fmap ($* mlsFrac) mls
-
 -- | Taxable income
 instance (RealFrac a) => HasTaxableIncome (TaxReturnInfo y) a a where
   taxableIncome = to $ \info ->
@@ -577,7 +559,19 @@ assessTax tables info =
     taxable = view taxableIncome info
     due = getTax (individualTax tables) taxable
     studyRepayment = getTax (studyAndTrainingLoanRepaymentTax tables info) taxable
-    mlAndMLS = getTax (medicareLevyTax tables info) taxable
+
+    ml = medicareLevy'
+          (ttMedicareLevyRatesAndThresholds tables)
+          taxable
+          (preview (spouseDetails . traverse . spouseTaxableIncome) info)
+          (view (incomeTests . dependentChildren) info)
+
+    mls =
+      let mlsFrac = 1 - getFraction (view mlsExemption info)
+      -- FIXME income for MLS purposes includes fringe benefits; family thresholds apply
+      in getTax (fmap ($* mlsFrac) (ttMedicareLevySurcharge tables)) taxable
+
+    mlAndMLS = ml <> mls
 
     incomeForSurchargePurposes =
       taxable
@@ -605,7 +599,16 @@ assessTax tables info =
               view taxableIncome info'
               <> view (deductions . foreignIncomeDeductions) info'
             due' = getTax (individualTax tables) taxable'
-            mlAndMLS' = getTax (medicareLevyTax tables info') taxable'
+            ml' = medicareLevy'
+                    (ttMedicareLevyRatesAndThresholds tables)
+                    taxable
+                    (preview (spouseDetails . traverse . spouseTaxableIncome) info)
+                    (view (incomeTests . dependentChildren) info)
+            mls' =
+              let mlsFrac = 1 - getFraction (view mlsExemption info)
+              -- FIXME income for MLS purposes includes fringe benefits; family thresholds apply
+              in getTax (fmap ($* mlsFrac) (ttMedicareLevySurcharge tables)) taxable
+            mlAndMLS' = ml' <> mls'
           in
             due' <> mlAndMLS'
         step3 = step1 $-$ step2

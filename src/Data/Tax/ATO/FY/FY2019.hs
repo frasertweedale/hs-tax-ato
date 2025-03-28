@@ -20,7 +20,6 @@
 module Data.Tax.ATO.FY.FY2019 (FY, fyProxy, tables) where
 
 import Data.Proxy
-import Control.Lens (review)
 
 import Data.Tax
 import Data.Tax.ATO.Common
@@ -46,6 +45,16 @@ help = thresholds'
   , (86856, 0.005), (91426, 0.005), (100614, 0.005), (107214, 0.005) ]
 sfss = thresholds' [(51957, 0.02), (64307, 0.01), (91426, 0.01)]
 
+medicare :: (Fractional a) => MedicareLevyRatesAndThresholds a
+medicare = MedicareLevyRatesAndThresholds
+  { medicareLevyRate                                  = 0.02
+  , medicareLevyThresholdIndividual                   = Money 22398
+  , medicareLevyThresholdIndividualSeniorAndPensioner = Money 35418
+  , medicareLevyThresholdFamily                       = Money 37794
+  , medicareLevyThresholdFamilySeniorAndPensioner     = Money 49304
+  , medicareLevyThresholdDependentChildIncrease       = Money  3471
+  }
+
 -- | The 37% threshold was increased from $87,000 to $90,000.
 --
 -- The new /low and middle income tax offset (LAMITO)/ was
@@ -54,7 +63,7 @@ sfss = thresholds' [(51957, 0.02), (64307, 0.01), (91426, 0.01)]
 tables :: (Ord a, Fractional a) => TaxTables FY a
 tables = TaxTables
   individualIncomeTax
-  (medicareLevy (review money 22398))
+  medicare
   (ttMedicareLevySurcharge FY2018.tables)
   help
   sfss
