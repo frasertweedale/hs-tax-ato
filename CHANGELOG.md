@@ -17,9 +17,7 @@
 
 - Fix FY2024 private health insurance rebate tier thresholds.
 
-- Add *non-final* `FY2025` module.  The Medicare levy thresholds
-  are final but the private health insurance rebate adjustment
-  factor has not been updated yet.
+- Add `FY2025` module.  All rates and thresholds are up to date.
 
 
 ## Version 2024.1

@@ -84,9 +84,9 @@ individualIncomeTax = marginal'
 privateHealthInsuranceRebateRates
   :: (Fractional a) => PrivateHealthInsuranceRebateRates a
 privateHealthInsuranceRebateRates =
-  [ ( 97000, (0.24608, 0.24608), (0.28710, 0.28710), (0.32812, 0.32812) )
-  , (113000, (0.16405, 0.16405), (0.20507, 0.20507), (0.24608, 0.24608) )
-  , (151000, (0.08202, 0.08202), (0.12303, 0.12303), (0.16405, 0.16405) )
+  [ ( 97000, (0.24608, 0.24288), (0.28710, 0.28337), (0.32812, 0.32385) )
+  , (113000, (0.16405, 0.16192), (0.20507, 0.20240), (0.24608, 0.24288) )
+  , (151000, (0.08202, 0.08095), (0.12303, 0.12143), (0.16405, 0.16192) )
   ]
 
 tables :: (Ord a, Fractional a) => TaxTables FY a
@@ -99,5 +99,4 @@ tables = TaxTables
 
   lowIncomeTaxOffset2021
 
-  -- TODO adjustment factor will be released in april
   privateHealthInsuranceRebateRates
