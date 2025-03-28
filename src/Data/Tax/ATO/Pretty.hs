@@ -148,14 +148,20 @@ summariseAssessment assessment =
   "Your taxable income is $" P.<> formatMoney (view taxableIncome assessment)
   P.$+$ P.text (replicate 80 '-')
   P.$+$ vcatWith twoCol
-    [ ("Tax on your taxable income"                 , view taxDue assessment)
-    , ("Less credits and offsets"                   , views taxCreditsAndOffsets (fmap negate) assessment)
-    , ("Medicare levy (and surcharge, if any)"      , view medicareLevyDue assessment)
-    , ("Study and training loan repayment"          , view studyAndTrainingLoanRepayment assessment)
-    , ("Excess private health reduction or refund"  , view privateHealthInsuranceRebateAdjustment assessment)
-    , ("Less PAYG withholding"                      , views taxWithheld (fmap negate) assessment)
-    , ("Less PAYG instalments"                      , views paygInstalmentsCredit (fmap negate) assessment)
-    ]
+    (
+      [ ("Tax on your taxable income"                 , view taxDue assessment)
+      , ("Less credits and offsets"                   , views taxCreditsAndOffsets (fmap negate) assessment)
+      , ("Medicare levy (and surcharge, if any)"      , view medicareLevyDue assessment)
+      ]
+    <> filter ((/= mempty) . snd)
+      [ ("Study and training loan repayment"          , view studyAndTrainingLoanRepayment assessment)
+      , ("Excess private health reduction or refund"  , view privateHealthInsuranceRebateAdjustment assessment)
+      ]
+    <>
+      [ ("Less PAYG withholding"                      , views taxWithheld (fmap negate) assessment)
+      , ("Less PAYG instalments"                      , views paygInstalmentsCredit (fmap negate) assessment)
+      ]
+    )
   P.$+$ P.text (replicate 80 '-')
   P.$+$ "Result of this notice" P.$$ P.nest colWidthLabel (views taxBalance formatMoney assessment)
   P.$+$ "Net capital loss to carry forward" P.$$ P.nest colWidthLabel (views (taxCGTAssessment . capitalLossCarryForward) formatMoney assessment)
