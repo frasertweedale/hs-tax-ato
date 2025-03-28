@@ -1021,6 +1021,7 @@ data ESSStatement a = ESSStatement
   , _tfnAmounts :: Money a
   , _foreignSourceDiscounts :: Money a
   }
+  deriving (Eq)
 
 -- | Construct an 'ESSStatement' with all amounts at /zero/.
 newESSStatement :: Num a => ESSStatement a

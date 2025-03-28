@@ -86,9 +86,9 @@ summariseTaxReturnInfo info =
     ]
   P.$+$ "  11  Dividends"
   P.$+$ views dividends summariseDividends info
+  P.$+$ views ess summariseESS info
   P.$+$ vcatWith twoCol
-    [ ("  12  Employee share schemes" , view (ess . taxableIncome) info)
-    , ("  20M Other net foreign source income" , view foreignIncome info)
+    [ ("  20M Other net foreign source income" , view foreignIncome info)
     ]
   P.$+$ "Deductions"
   P.$+$ P.vcat (uncurry (summariseDeduction (view deductions info)) <$> deductionsTable)
@@ -109,6 +109,19 @@ summariseDividends =
       , view taxWithheld l
       , view taxableIncome l
       )
+
+summariseESS :: ESSStatement Rational -> P.Doc
+summariseESS s
+  | s == newESSStatement = P.empty
+  | otherwise =
+      "  12  Employee share schemes"
+      P.$+$ P.vcat
+        [ twoCol ("    D Discount from upfront schemes - eligible for reduction", view essTaxedUpfrontReduction s)
+        , twoCol ("    E Discount from upfront schemes - ineligible for reduction", view essTaxedUpfrontNoReduction s)
+        , twoCol ("    F Discount from deferral schemes", view essDeferral s)
+        , threeColLeft ("    C TFN amounts withheld from discounts", view essTFNAmounts s)
+        , twoCol ("    A Foreign source discounts", view essForeignSourceDiscounts s)
+        ]
 
 deductionsTable :: [(ALens' (Deductions Rational) (Money Rational), String)]
 deductionsTable =
