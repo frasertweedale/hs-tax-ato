@@ -61,6 +61,11 @@ formatMoney (Money x) =
 twoCol :: (P.Doc, Money Rational) -> P.Doc
 twoCol (label, value) = label P.$$ P.nest (80 - colWidthMoney) (formatMoney value)
 
+omitIfZero :: ((a, Money Rational) -> P.Doc) -> (a, Money Rational) -> P.Doc
+omitIfZero f rec@(_,x)
+  | x == mempty = P.empty
+  | otherwise   = f rec
+
 threeCol :: (P.Doc, Money Rational, Money Rational) -> P.Doc
 threeCol (label, v1, v2) =
   label
@@ -173,22 +178,27 @@ summariseAssessment :: TaxAssessment Rational -> P.Doc
 summariseAssessment assessment =
   "Your taxable income is $" P.<> formatMoney (view taxableIncome assessment)
   P.$+$ P.text (replicate 80 '-')
-  P.$+$ vcatWith twoCol
-    (
-      [ ("Tax on your taxable income"                 , view taxDue assessment)
-      , ("Less credits and offsets"                   , views taxCreditsAndOffsets (fmap negate) assessment)
-      , ("Medicare levy"                              , view medicareLevyDue assessment)
-      ]
-    <> filter ((/= mempty) . snd)
-      [ ("Medicare levy surcharge"                    , view medicareLevySurchargeDue assessment)
-      , ("Study and training loan repayment"          , view studyAndTrainingLoanRepayment assessment)
-      , ("Excess private health reduction or refund"  , view privateHealthInsuranceRebateAdjustment assessment)
-      ]
-    <>
-      [ ("Less PAYG withholding"                      , views taxWithheld (fmap negate) assessment)
-      , ("Less PAYG instalments"                      , views paygInstalmentsCredit (fmap negate) assessment)
-      ]
-    )
+  P.$+$ threeColLeft ("Tax on your taxable on net income"          , view taxDue assessment)
+  P.$+$ "Less non-refundable tax offsets"
+  P.$+$ vcatWith (omitIfZero twoCol)
+    [ ("  Offset for super contributions on behalf of your spouse"
+      , view offsetForSuperannuationContributionsOnBehalfOfYourSpouse assessment )
+    , ("  Foreign income tax offsets"                 , view foreignIncomeTaxOffsets assessment)
+    ]
+  P.$+$ "Less refundable tax offsets"
+  P.$+$ twoCol ("  Franking credit offset"            , view frankingCreditOffset assessment)
+  P.$+$ "Plus other liabilities"
+  P.$+$ vcatWith (omitIfZero threeColLeft)
+    [ ("  Medicare levy"                              , view medicareLevyDue assessment)
+    , ("  Medicare levy surcharge"                    , view medicareLevySurchargeDue assessment)
+    , ("  Study and training loan repayment"          , view studyAndTrainingLoanRepayment assessment)
+    , ("  Excess private health reduction or refund"  , view privateHealthInsuranceRebateAdjustment assessment)
+    ]
+  P.$+$ "Less Pay as you go (PAYG) credits and other entitlements"
+  P.$+$ vcatWith (omitIfZero twoCol)
+    [ ("  PAYG instalments"                           , view paygInstalmentsCredit assessment)
+    , ("  PAYG withholding"                           , view taxWithheld assessment)
+    ]
   P.$+$ P.text (replicate 80 '-')
   P.$+$ "Result of this notice" P.$$ P.nest colWidthLabel (views taxBalance formatMoney assessment)
   P.$+$ "Net capital loss to carry forward" P.$$ P.nest colWidthLabel (views (taxCGTAssessment . capitalLossCarryForward) formatMoney assessment)

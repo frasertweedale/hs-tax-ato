@@ -16,12 +16,17 @@
   Remaining gaps include foreign withholding credits and separate
   treatment of collectables.
 
+- Non-refundable offsets now cannot reduce liability below $0, and
+  the order of application of the various liabilities, offsets and
+  credits has been fixed.
+
 - `TaxReturnInfo` pretty printing now includes more detailed ESS and
   CGT data, to help with preparation of tax returns.
 
-- `TaxAssessment` pretty printing now reports Medicare levy and
-  Medicare levy surcharge separately.  The
-  `medicareLevySurchargeDue` optic was added to support this change.
+- `TaxAssessment` pretty printing now separately reports Medicare
+  levy, Medicare levy surcharge, and the various non-refundable and
+  refundable tax offsets.  The formatting closely resembles the ATO
+  *notice of assessment* layout.
 
 - Add `FY2025` module.  All rates and thresholds are up to date.
 

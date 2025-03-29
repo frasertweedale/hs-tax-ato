@@ -136,10 +136,12 @@ module Data.Tax.ATO
   , assessTax
   , taxBalance
   , taxDue
+  , offsetForSuperannuationContributionsOnBehalfOfYourSpouse
+  , foreignIncomeTaxOffsets
+  , frankingCreditOffset
   , medicareLevyDue
   , medicareLevySurchargeDue
   , studyAndTrainingLoanRepayment
-  , taxCreditsAndOffsets
   , paygInstalmentsCredit
   , taxCGTAssessment
   , privateHealthInsuranceRebateAdjustment
@@ -451,10 +453,12 @@ incomeTests = lens _incomeTests (\s b -> s { _incomeTests = b })
 data TaxAssessment a = TaxAssessment
   { _taxableIncome :: Money a
   , _taxDue :: Money a
+  , _taSpouseContributionOffset :: Money a
+  , _taForeignIncomeTaxOffset :: Money a
+  , _taFrankingCreditOffset :: Money a
   , _medicareLevyDue :: Money a
   , _medicareLevySurchargeDue :: Money a
   , _taxWithheld :: Money a
-  , _taxCreditsAndOffsets :: Money a
   , _taCGTAssessment :: CGTAssessment a
   , _phiAdj :: Money a
   , _studyAndTrainingLoanRepayment :: Money a
@@ -467,17 +471,28 @@ instance HasTaxableIncome TaxAssessment a a where
 instance HasTaxWithheld TaxAssessment a a where
   taxWithheld = to _taxWithheld
 
-taxDue :: Getter (TaxAssessment a) (Money a)
-taxDue = to _taxDue
+taxDue :: Lens' (TaxAssessment a) (Money a)
+taxDue = lens _taxDue (\s b -> s { _taxDue = b })
 
-medicareLevyDue :: Getter (TaxAssessment a) (Money a)
-medicareLevyDue = to _medicareLevyDue
+offsetForSuperannuationContributionsOnBehalfOfYourSpouse :: Lens' (TaxAssessment a) (Money a)
+offsetForSuperannuationContributionsOnBehalfOfYourSpouse =
+  lens _taSpouseContributionOffset (\s b -> s { _taSpouseContributionOffset = b })
 
-medicareLevySurchargeDue :: Getter (TaxAssessment a) (Money a)
-medicareLevySurchargeDue = to _medicareLevySurchargeDue
+foreignIncomeTaxOffsets :: Lens' (TaxAssessment a) (Money a)
+foreignIncomeTaxOffsets =
+  lens _taForeignIncomeTaxOffset (\s b -> s { _taForeignIncomeTaxOffset = b })
 
-taxCreditsAndOffsets :: Getter (TaxAssessment a) (Money a)
-taxCreditsAndOffsets = to _taxCreditsAndOffsets
+frankingCreditOffset :: Lens' (TaxAssessment a) (Money a)
+frankingCreditOffset =
+  lens _taFrankingCreditOffset (\s b -> s { _taFrankingCreditOffset = b })
+
+medicareLevyDue :: Lens' (TaxAssessment a) (Money a)
+medicareLevyDue =
+  lens _medicareLevyDue (\s b -> s { _medicareLevyDue = b })
+
+medicareLevySurchargeDue :: Lens' (TaxAssessment a) (Money a)
+medicareLevySurchargeDue =
+  lens _medicareLevySurchargeDue (\s b -> s { _medicareLevySurchargeDue = b })
 
 taxCGTAssessment :: Lens' (TaxAssessment a) (CGTAssessment a)
 taxCGTAssessment = lens _taCGTAssessment (\s b -> s { _taCGTAssessment = b })
@@ -495,15 +510,25 @@ paygInstalmentsCredit =
 
 -- | What is the balance of the assessment?  Positive means a
 -- refund (tax withheld exceeds obligation), negative means a bill.
-taxBalance :: Num a => Getter (TaxAssessment a) (Money a)
-taxBalance = to $ \a ->
-  view taxWithheld a
-  $-$ view taxDue a
-  $-$ view medicareLevyDue a
-  $-$ view studyAndTrainingLoanRepayment a
-  $-$ view privateHealthInsuranceRebateAdjustment a
-  $+$ view taxCreditsAndOffsets a
-  $+$ view paygInstalmentsCredit a
+taxBalance :: (Num a, Ord a) => Getter (TaxAssessment a) (Money a)
+taxBalance = to $ fmap negate . \a ->
+  max (Money 0) (
+    -- tax on taxable income
+    view taxDue a
+    -- less non-refundable offsets
+    $-$ view offsetForSuperannuationContributionsOnBehalfOfYourSpouse a
+    $-$ view foreignIncomeTaxOffsets a
+  )
+  -- less refundable tax offsets
+  $-$ view frankingCreditOffset a
+  -- plus other liabilities
+  $+$ view medicareLevyDue a
+  $+$ view medicareLevySurchargeDue a
+  $+$ view privateHealthInsuranceRebateAdjustment a
+  $+$ view studyAndTrainingLoanRepayment a
+  -- less PAYG credits and other entitlements
+  $-$ view taxWithheld a
+  $-$ view paygInstalmentsCredit a
 
 instance HasCapitalLossCarryForward TaxAssessment a where
   capitalLossCarryForward = taxCGTAssessment . capitalLossCarryForward
@@ -618,18 +643,19 @@ assessTax tables info =
         max (Money 1000) step3
 
     frankingCredit = wholeDollars $ view (dividends . taxWithheld) info
-    off =
-      view (offsets . spouseContributionOffset) info
-      <> min (view (offsets . foreignTaxOffset) info) foreignIncomeTaxOffsetLimit
+    spouseContribOffset = view (offsets . spouseContributionOffset) info
+    fito = min (view (offsets . foreignTaxOffset) info) foreignIncomeTaxOffsetLimit
 
   in
     TaxAssessment
       taxable
       due
+      spouseContribOffset
+      fito
+      frankingCredit
       ml
       mls
       (view taxWithheld info)
-      (frankingCredit <> off)
       cg
       phiAdj
       studyRepayment
