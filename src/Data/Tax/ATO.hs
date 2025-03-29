@@ -137,6 +137,7 @@ module Data.Tax.ATO
   , taxBalance
   , taxDue
   , medicareLevyDue
+  , medicareLevySurchargeDue
   , studyAndTrainingLoanRepayment
   , taxCreditsAndOffsets
   , paygInstalmentsCredit
@@ -451,6 +452,7 @@ data TaxAssessment a = TaxAssessment
   { _taxableIncome :: Money a
   , _taxDue :: Money a
   , _medicareLevyDue :: Money a
+  , _medicareLevySurchargeDue :: Money a
   , _taxWithheld :: Money a
   , _taxCreditsAndOffsets :: Money a
   , _taCGTAssessment :: CGTAssessment a
@@ -470,6 +472,9 @@ taxDue = to _taxDue
 
 medicareLevyDue :: Getter (TaxAssessment a) (Money a)
 medicareLevyDue = to _medicareLevyDue
+
+medicareLevySurchargeDue :: Getter (TaxAssessment a) (Money a)
+medicareLevySurchargeDue = to _medicareLevySurchargeDue
 
 taxCreditsAndOffsets :: Getter (TaxAssessment a) (Money a)
 taxCreditsAndOffsets = to _taxCreditsAndOffsets
@@ -571,8 +576,6 @@ assessTax tables info =
       -- FIXME income for MLS purposes includes fringe benefits; family thresholds apply
       in getTax (fmap ($* mlsFrac) (ttMedicareLevySurcharge tables)) taxable
 
-    mlAndMLS = ml <> mls
-
     incomeForSurchargePurposes =
       taxable
       -- TODO reportable fringe benefits
@@ -591,7 +594,7 @@ assessTax tables info =
 
     foreignIncomeTaxOffsetLimit =
       let
-        step1 = due <> mlAndMLS
+        step1 = due <> ml <> mls
         step2 =
           let
             info' = info & set foreignIncome mempty
@@ -608,9 +611,8 @@ assessTax tables info =
               let mlsFrac = 1 - getFraction (view mlsExemption info)
               -- FIXME income for MLS purposes includes fringe benefits; family thresholds apply
               in getTax (fmap ($* mlsFrac) (ttMedicareLevySurcharge tables)) taxable
-            mlAndMLS' = ml' <> mls'
           in
-            due' <> mlAndMLS'
+            due' <> ml' <> mls'
         step3 = step1 $-$ step2
       in
         max (Money 1000) step3
@@ -624,7 +626,8 @@ assessTax tables info =
     TaxAssessment
       taxable
       due
-      mlAndMLS
+      ml
+      mls
       (view taxWithheld info)
       (frankingCredit <> off)
       cg

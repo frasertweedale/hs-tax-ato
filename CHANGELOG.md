@@ -19,6 +19,10 @@
 - `TaxReturnInfo` pretty printing now includes more detailed ESS and
   CGT data, to help with preparation of tax returns.
 
+- `TaxAssessment` pretty printing now reports Medicare levy and
+  Medicare levy surcharge separately.  The
+  `medicareLevySurchargeDue` optic was added to support this change.
+
 - Add `FY2025` module.  All rates and thresholds are up to date.
 
 - Fix FY2024 private health insurance rebate tier thresholds.

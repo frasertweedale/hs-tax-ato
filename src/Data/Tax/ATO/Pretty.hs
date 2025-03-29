@@ -177,10 +177,11 @@ summariseAssessment assessment =
     (
       [ ("Tax on your taxable income"                 , view taxDue assessment)
       , ("Less credits and offsets"                   , views taxCreditsAndOffsets (fmap negate) assessment)
-      , ("Medicare levy (and surcharge, if any)"      , view medicareLevyDue assessment)
+      , ("Medicare levy"                              , view medicareLevyDue assessment)
       ]
     <> filter ((/= mempty) . snd)
-      [ ("Study and training loan repayment"          , view studyAndTrainingLoanRepayment assessment)
+      [ ("Medicare levy surcharge"                    , view medicareLevySurchargeDue assessment)
+      , ("Study and training loan repayment"          , view studyAndTrainingLoanRepayment assessment)
       , ("Excess private health reduction or refund"  , view privateHealthInsuranceRebateAdjustment assessment)
       ]
     <>
