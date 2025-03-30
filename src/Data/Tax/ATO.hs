@@ -571,12 +571,16 @@ instance (RealFrac a) => HasTaxableIncome (TaxReturnInfo y) a a where
     in
       wholeDollars (gross $-$ views deductions totalDeductions info)
 
--- | Includes PAYG withholding by employer or bank.
--- Does not include franking credits.
+-- | Includes PAYG withholding by employer, and TFN
+-- amounts withheld e.g. from bank interest, ESS discounts, etc.
+--
+-- Does not include franking credits (which are a refundable offset).
+--
 instance (Num a) => HasTaxWithheld (TaxReturnInfo y) a a where
   taxWithheld = to $ \info ->
     view (paymentSummaries . taxWithheld) info
     <> view (interest . taxWithheld) info
+    <> view (ess . essTFNAmounts) info
 
 -- | Assess a tax return, given tax tables and tax return info.
 assessTax

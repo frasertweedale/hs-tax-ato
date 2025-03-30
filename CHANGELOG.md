@@ -1,5 +1,7 @@
 ## Version NEXT
 
+### Features and enhancements
+
 - New module `Data.Tax.ATO.Depreciation` provides types and
   functions for calculating decline in value (for deductions).
   Use the `DepreciatingAsset` data type to define depreciating
@@ -16,10 +18,6 @@
   Remaining gaps include foreign withholding credits and separate
   treatment of collectables.
 
-- Non-refundable offsets now cannot reduce liability below $0, and
-  the order of application of the various liabilities, offsets and
-  credits has been fixed.
-
 - `TaxReturnInfo` pretty printing now includes more detailed ESS and
   CGT data, to help with preparation of tax returns.
 
@@ -30,12 +28,23 @@
 
 - Add `FY2025` module.  All rates and thresholds are up to date.
 
-- Fix FY2024 private health insurance rebate tier thresholds.
-
 - Added some new helper functions to the `Data.Tax.ATO.FY` module:
   - `fromProxy :: (FinancialYear y) => Proxy y -> Year`
   - `daysInYear :: Year -> Integer`
   - `daysInYearFromProxy :: FinancialYear y => Proxy y -> Integer`
+
+### Bug fixes
+
+- Non-refundable offsets now cannot reduce liability below $0, and
+  the order of application of the various liabilities, offsets and
+  credits has been fixed.
+
+- Employee share scheme TFN amounts withheld are now included in
+  assessment calculations ([#8]).
+
+- Fix FY2024 private health insurance rebate tier thresholds.
+
+[#8]: https://github.com/frasertweedale/hs-tax-ato/issues/8
 
 
 ## Version 2024.1
