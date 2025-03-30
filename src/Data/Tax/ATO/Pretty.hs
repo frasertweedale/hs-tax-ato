@@ -166,12 +166,7 @@ summariseDeduction
   -> String
   -> P.Doc
 summariseDeduction a l desc
-  | amt > mempty
-  = P.nest 2 (P.text desc) P.$$ P.nest colWidthLabel (formatMoney amt)
-  | otherwise
-  = P.empty
-  where
-    amt = view (cloneLens l) a
+  = omitIfZero twoCol (P.nest 2 (P.text desc), view (cloneLens l) a)
 
 
 summariseAssessment :: TaxAssessment Rational -> P.Doc
