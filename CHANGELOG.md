@@ -18,10 +18,10 @@
   Remaining gaps include foreign withholding credits and separate
   treatment of collectables.
 
-- Added the `Data.Tax.ATO.ABN` module, with a more representative
-  data type, conversion functions, and proper validation.  An
-  `IsString` type is provided for compatibility with existing code
-  (assuming `OverloadedStrings` and valid values).
+- Added the `Data.Tax.ATO.ABN` and `Data.Tax.ATO.TFN` modules, which
+  have more representative data types, conversion functions, and
+  proper validation.  `IsString` instances are provided for
+  compatibility with existing code.
 
 - `TaxReturnInfo` pretty printing now includes more detailed ESS and
   CGT data, to help with preparation of tax returns.
