@@ -61,6 +61,7 @@ library
   hs-source-dirs:      src
   exposed-modules:
     Data.Tax.ATO
+    Data.Tax.ATO.ABN
     Data.Tax.ATO.CGT
     Data.Tax.ATO.Common
     Data.Tax.ATO.Depreciation

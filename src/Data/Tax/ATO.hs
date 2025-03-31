@@ -49,7 +49,6 @@ module Data.Tax.ATO
   -- *** PAYG Payment Summaries
   , PaymentSummary(..)
   , paymentSummaries
-  , ABN
 
   -- *** Interest
   , interest
@@ -156,6 +155,7 @@ module Data.Tax.ATO
   , getProportion
   , proportion
   , module Data.Tax
+  , module Data.Tax.ATO.ABN
   , module Data.Tax.ATO.Depreciation
   , module Data.Tax.ATO.PrivateHealthInsuranceRebate
   , module Data.Tax.ATO.Rounding
@@ -166,6 +166,7 @@ import Data.Time (Day)
 
 import Data.Tax
 import Data.Tax.ATO.CGT
+import Data.Tax.ATO.ABN (ABN)
 import Data.Tax.ATO.Common
 import Data.Tax.ATO.Depreciation
 import Data.Tax.ATO.FY
@@ -664,9 +665,6 @@ assessTax tables info =
       phiAdj
       studyRepayment
       (view (offsets . paygInstalments) info)
-
--- | Australian Business Number
-type ABN = String
 
 -- | PAYG payment summary - individual non-business
 data PaymentSummary a = PaymentSummary
