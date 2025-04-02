@@ -23,11 +23,11 @@ import qualified Data.Tax.ATO.TFN as TFN
 
 main = do
   let
-    abnStr = "53 004 085 616"
-    Just abn = TFN.parse abnStr
-    abnInt = TFN.asInt abn
-    Just abn' = TFN.fromInt abnInt
-  putStrLn $ TFN.asString abn'  -- prints "53 004 085 616"
+    tfnStr = "330 600 376"
+    Just tfn = TFN.parse tfnStr
+    tfnInt = TFN.asInt tfn
+    Just tfn' = TFN.fromInt tfnInt
+  putStrLn $ TFN.asString tfn'  -- prints "330 600 376"
 @
 
 It is recommended to import this module qualified.
