@@ -42,7 +42,6 @@ module Data.Tax.ATO
     TaxReturnInfo
   , newTaxReturnInfo
   , newTaxReturnInfoForTables
-  , taxableIncome
 
   -- ** Income
 
@@ -150,6 +149,7 @@ module Data.Tax.ATO
 
   -- * Miscellaneous
   , GrossAndWithheld(..)
+  , HasTaxableIncome(..)
   , HasTaxWithheld(..)
   , Proportion
   , getProportion
@@ -250,14 +250,6 @@ taxReturn = 'newTaxReturnInfo'
 @
 
 -}
-
--- | Data that can have an amount of tax withheld
-class HasTaxWithheld a b c where
-  taxWithheld :: Getter (a b) (Money c)
-
-instance (Foldable t, HasTaxWithheld x a a, Num a)
-            => HasTaxWithheld t (x a) a where
-  taxWithheld = to (foldMap (view taxWithheld))
 
 -- TODO part year spouse
 newtype SpouseDetails a = SpouseDetails

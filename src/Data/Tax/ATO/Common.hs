@@ -31,6 +31,7 @@ module Data.Tax.ATO.Common
 
   -- * Classes
   , HasTaxableIncome(..)
+  , HasTaxWithheld(..)
 
   -- * Medicare levy
   , MedicareLevyRatesAndThresholds(..)
@@ -154,3 +155,11 @@ instance
     => HasTaxableIncome t (x a) a
     where
   taxableIncome = to (foldMap (view taxableIncome))
+
+-- | Types that can have an amount of tax withheld.
+class HasTaxWithheld a b c where
+  taxWithheld :: Getter (a b) (Money c)
+
+instance (Foldable t, HasTaxWithheld x a a, Num a)
+            => HasTaxWithheld t (x a) a where
+  taxWithheld = to (foldMap (view taxWithheld))
