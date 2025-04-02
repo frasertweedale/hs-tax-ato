@@ -46,7 +46,7 @@ module Data.Tax.ATO
   -- ** Income
 
   -- *** PAYG Payment Summaries
-  , PaymentSummary(..)
+  , paymentSummariesIndividualNonBusiness
   , paymentSummaries
 
   -- *** Interest
@@ -157,6 +157,7 @@ module Data.Tax.ATO
   , module Data.Tax
   , module Data.Tax.ATO.ABN
   , module Data.Tax.ATO.Depreciation
+  , module Data.Tax.ATO.PaymentSummary
   , module Data.Tax.ATO.PrivateHealthInsuranceRebate
   , module Data.Tax.ATO.Rounding
   ) where
@@ -170,6 +171,7 @@ import Data.Tax.ATO.ABN (ABN)
 import Data.Tax.ATO.Common
 import Data.Tax.ATO.Depreciation
 import Data.Tax.ATO.FY
+import Data.Tax.ATO.PaymentSummary
 import Data.Tax.ATO.PrivateHealthInsuranceRebate
 import Data.Tax.ATO.Rounding
 
@@ -203,11 +205,10 @@ main = do
 taxReturn :: 'TaxReturnInfo' FY.FY Rational
 taxReturn = 'newTaxReturnInfo'
   & set 'paymentSummaries'
-      [ 'PaymentSummary'
-          "1234567890"      -- ABN
-          (Money $ 180000)  -- Gross payments
-          (Money 50000)     -- Tax withheld
-          mempty            -- Reportable super contributions
+      [ 'newPaymentSummaryIndividualNonBusiness' \"53 004 085 616\"  -- ABN
+          & set 'paymentSummaryIndividualNonBusinessGrossPayments'    (Money 180000)
+          & set 'paymentSummaryIndividualNonBusinessTotalTaxWithheld' (Money  50000)
+          & set 'reportableEmployerSuperannuationContributions'       (Money   3000)
       ]
 
   & set 'cgtEvents'
@@ -335,7 +336,7 @@ data TaxReturnInfo y a = TaxReturnInfo
   { _mlsExemption :: Days y
   , _helpBalance :: Money a
   , _sfssBalance :: Money a
-  , _paymentSummaries :: [PaymentSummary a]
+  , _paymentSummariesIndividualNonBusiness :: [PaymentSummaryIndividualNonBusiness a]
   , _interest :: GrossAndWithheld a
   , _dividends :: [Dividend a]
   , _ess :: ESSStatement a
@@ -406,8 +407,13 @@ sfssBalance = lens _sfssBalance (\s b -> s { _sfssBalance = b })
 mlsExemption :: Lens' (TaxReturnInfo y a) (Days y)
 mlsExemption = lens _mlsExemption (\s b -> s { _mlsExemption = b })
 
-paymentSummaries :: Lens' (TaxReturnInfo y a) [PaymentSummary a]
-paymentSummaries = lens _paymentSummaries (\s b -> s { _paymentSummaries = b })
+paymentSummariesIndividualNonBusiness :: Lens' (TaxReturnInfo y a) [PaymentSummaryIndividualNonBusiness a]
+paymentSummariesIndividualNonBusiness =
+  lens _paymentSummariesIndividualNonBusiness (\s b -> s { _paymentSummariesIndividualNonBusiness = b })
+
+-- | Deprecated synonym for 'paymentSummariesIndividualNonBusiness'
+paymentSummaries :: Lens' (TaxReturnInfo y a) [PaymentSummaryIndividualNonBusiness a]
+paymentSummaries = paymentSummariesIndividualNonBusiness
 
 interest :: Lens' (TaxReturnInfo y a) (GrossAndWithheld a)
 interest = lens _interest (\s b -> s { _interest = b })
@@ -602,7 +608,7 @@ assessTax tables info =
       taxable
       -- TODO reportable fringe benefits
       -- TODO net investment losses
-      <> foldOf (paymentSummaries . traverse . to reportableEmployerSuperannuationContributions) info
+      <> foldOf (paymentSummaries . traverse . reportableEmployerSuperannuationContributions) info
 
     spouseIncomeForSurchargePurposes =
       fmap (view spouseTaxableIncome) (view spouseDetails info)
@@ -658,20 +664,6 @@ assessTax tables info =
       studyRepayment
       (view (offsets . paygInstalments) info)
 
--- | PAYG payment summary - individual non-business
-data PaymentSummary a = PaymentSummary
-  { summaryABN :: ABN
-  , summaryGross :: Money a
-  , summaryWithheld :: Money a
-  , reportableEmployerSuperannuationContributions :: Money a
-  }
-
--- | Gross income
-instance HasTaxableIncome PaymentSummary a a where
-  taxableIncome = to summaryGross
-
-instance HasTaxWithheld PaymentSummary a a where
-  taxWithheld = to summaryWithheld
 
 -- | A proportion is a non-negative number in interval @[0,1]@.
 -- Use 'proportion' to construct.

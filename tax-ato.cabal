@@ -66,6 +66,7 @@ library
     Data.Tax.ATO.CGT
     Data.Tax.ATO.Common
     Data.Tax.ATO.Depreciation
+    Data.Tax.ATO.PaymentSummary
     Data.Tax.ATO.Pretty
     Data.Tax.ATO.PrivateHealthInsuranceRebate
     Data.Tax.ATO.Rounding

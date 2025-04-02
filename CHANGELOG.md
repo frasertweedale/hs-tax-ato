@@ -2,6 +2,13 @@
 
 ### Features and enhancements
 
+- Overhauled payment summaries.  More comprehensive data types and
+  optics are provided in module `Data.Tax.ATO.PaymentSummary`.
+
+  The old `PaymentSummary` constructor persists as a (deprecated)
+  pattern synonym, for backwards compatibility.  It will be removed
+  in a future release.
+
 - New module `Data.Tax.ATO.Depreciation` provides types and
   functions for calculating decline in value (for deductions).
   Use the `DepreciatingAsset` data type to define depreciating
