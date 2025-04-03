@@ -85,7 +85,10 @@ summariseTaxReturnInfo :: TaxReturnInfo y Rational -> P.Doc
 summariseTaxReturnInfo info =
   "Income"
   P.$+$ vcatWith threeCol
-    [ ("  1   Salary or wages"  , view (paymentSummaries . taxWithheld) info, view (paymentSummaries . taxableIncome) info)
+    [ ( "  1   Salary or wages"
+      , view (paymentSummariesIndividualNonBusiness . taxWithheld) info
+      , view (paymentSummariesIndividualNonBusiness . taxableIncome) info
+      )
     , ("  10  Interest"         , view (interest . taxWithheld) info, view (interest . taxableIncome) info)
     ]
   P.$+$ "  11  Dividends"

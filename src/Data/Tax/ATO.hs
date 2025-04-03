@@ -204,7 +204,7 @@ main = do
 
 taxReturn :: 'TaxReturnInfo' FY.FY Rational
 taxReturn = 'newTaxReturnInfo'
-  & set 'paymentSummaries'
+  & set 'paymentSummariesIndividualNonBusiness'
       [ 'newPaymentSummaryIndividualNonBusiness' \"53 004 085 616\"  -- ABN
           & set 'paymentSummaryIndividualNonBusinessGrossPayments'    (Money 180000)
           & set 'paymentSummaryIndividualNonBusinessTotalTaxWithheld' (Money  50000)
@@ -301,37 +301,38 @@ dependentChildren =
 --
 -- The following lenses are available:
 --
--- +---------------------------------------+----------------------------------+
--- | 'mlsExemption'                        | Medicare levy exemption          |
--- +---------------------------------------+----------------------------------+
--- | 'helpBalance'                         | HELP, VSL, SSL, ABSTUDY SSL,     |
--- |                                       | and TSL account balance          |
--- +---------------------------------------+----------------------------------+
--- | 'sfssBalance'                         | SFSS account balance             |
--- +---------------------------------------+----------------------------------+
--- | 'paymentSummaries'                    | PAYG payment summaries           |
--- +---------------------------------------+----------------------------------+
--- | 'interest'                            | Interest income and tax withheld |
--- +---------------------------------------+----------------------------------+
--- | 'dividends'                           | Dividend data                    |
--- +---------------------------------------+----------------------------------+
--- | 'ess'                                 | Employee Share Scheme statement  |
--- +---------------------------------------+----------------------------------+
--- | 'foreignIncome'                       | Foreign income                   |
--- +---------------------------------------+----------------------------------+
--- | 'cgtEvents'                           | Capital gains and losses         |
--- +---------------------------------------+----------------------------------+
--- | 'deductions'                          | Deductions                       |
--- +---------------------------------------+----------------------------------+
--- | 'offsets'                             | Tax offsets                      |
--- +---------------------------------------+----------------------------------+
--- | 'privateHealthInsurancePolicyDetails' | Private health insurance         |
--- |                                       | policy details                   |
--- +---------------------------------------+----------------------------------+
--- | 'spouseDetails'                       | Spouse Details (or @Nothing@)    |
--- +---------------------------------------+----------------------------------+
--- | 'incomeTests'                         | Income Tests                     |
--- +---------------------------------------+----------------------------------+
+-- +------------------------------------------------------+----------------------------------+
+-- | 'mlsExemption'                                       | Medicare levy exemption          |
+-- +------------------------------------------------------+----------------------------------+
+-- | 'helpBalance'                                        | HELP, VSL, SSL, ABSTUDY SSL,     |
+-- |                                                      | and AASL/TSL account balance     |
+-- +------------------------------------------------------+----------------------------------+
+-- | 'sfssBalance'                                        | SFSS account balance             |
+-- +------------------------------------------------------+----------------------------------+
+-- | 'paymentSummariesIndividualNonBusiness'              | PAYG payment summaries -         |
+-- |                                                      | individual non-business          |
+-- +------------------------------------------------------+----------------------------------+
+-- | 'interest'                                           | Interest income and tax withheld |
+-- +------------------------------------------------------+----------------------------------+
+-- | 'dividends'                                          | Dividend data                    |
+-- +------------------------------------------------------+----------------------------------+
+-- | 'ess'                                                | Employee Share Scheme statement  |
+-- +------------------------------------------------------+----------------------------------+
+-- | 'foreignIncome'                                      | Foreign income                   |
+-- +------------------------------------------------------+----------------------------------+
+-- | 'cgtEvents'                                          | Capital gains and losses         |
+-- +------------------------------------------------------+----------------------------------+
+-- | 'deductions'                                         | Deductions                       |
+-- +------------------------------------------------------+----------------------------------+
+-- | 'offsets'                                            | Tax offsets                      |
+-- +------------------------------------------------------+----------------------------------+
+-- | 'privateHealthInsurancePolicyDetails'                | Private health insurance         |
+-- |                                                      | policy details                   |
+-- +------------------------------------------------------+----------------------------------+
+-- | 'spouseDetails'                                      | Spouse Details (or @Nothing@)    |
+-- +------------------------------------------------------+----------------------------------+
+-- | 'incomeTests'                                        | Income Tests                     |
+-- +------------------------------------------------------+----------------------------------+
 --
 data TaxReturnInfo y a = TaxReturnInfo
   { _mlsExemption :: Days y
@@ -415,6 +416,7 @@ paymentSummariesIndividualNonBusiness =
 -- | Deprecated synonym for 'paymentSummariesIndividualNonBusiness'
 paymentSummaries :: Lens' (TaxReturnInfo y a) [PaymentSummaryIndividualNonBusiness a]
 paymentSummaries = paymentSummariesIndividualNonBusiness
+{-# DEPRECATED paymentSummaries "use 'paymentSummariesIndividualNonBusiness'" #-}
 
 interest :: Lens' (TaxReturnInfo y a) (GrossAndWithheld a)
 interest = lens _interest (\s b -> s { _interest = b })
@@ -561,7 +563,7 @@ instance (RealFrac a) => HasTaxableIncome (TaxReturnInfo y) a a where
     let
       cf = view capitalLossCarryForward info
       gross = foldMap wholeDollars
-        [ view (paymentSummaries . taxableIncome) info
+        [ view (paymentSummariesIndividualNonBusiness . taxableIncome) info
         , view (interest . taxableIncome) info
         , view (dividends . taxableIncome) info
         , view (ess . taxableIncome) info
@@ -578,7 +580,7 @@ instance (RealFrac a) => HasTaxableIncome (TaxReturnInfo y) a a where
 --
 instance (Num a) => HasTaxWithheld (TaxReturnInfo y) a a where
   taxWithheld = to $ \info ->
-    view (paymentSummaries . taxWithheld) info
+    view (paymentSummariesIndividualNonBusiness . taxWithheld) info
     <> view (interest . taxWithheld) info
     <> view (ess . essTFNAmounts) info
 
