@@ -209,6 +209,7 @@ taxReturn = 'newTaxReturnInfo'
           & set 'paymentSummaryIndividualNonBusinessGrossPayments'    (Money 180000)
           & set 'paymentSummaryIndividualNonBusinessTotalTaxWithheld' (Money  50000)
           & set 'reportableEmployerSuperannuationContributions'       (Money   3000)
+          & set 'reportableFringeBenefits' ('fringeBenefitsEmployerNotExempt' $ Money 7274)
       ]
 
   & set 'cgtEvents'
@@ -591,7 +592,27 @@ assessTax tables info =
           (view capitalLossCarryForward info) (view cgtEvents info)
     taxable = view taxableIncome info
     due = getTax (individualTax tables) taxable
-    studyRepayment = getTax (studyAndTrainingLoanRepaymentTax tables info) taxable
+
+    fringeBenefits = foldOf l info
+      where
+        l =
+          paymentSummariesIndividualNonBusiness . traverse
+          . reportableFringeBenefits . traverse
+          . to (\(ReportableFringeBenefits amount _) -> amount)
+
+    reportableSuperContributions =
+      foldOf (paymentSummariesIndividualNonBusiness . traverse . reportableEmployerSuperannuationContributions) info
+      <> view (deductions . personalSuperannuationContributions) info
+
+    repaymentIncome =
+      taxable
+      <> fringeBenefits
+      -- TODO net financial investment losses
+      -- TODO net rental property losses
+      <> reportableSuperContributions
+      -- TODO exempt foreign employment income
+
+    studyRepayment = getTax (studyAndTrainingLoanRepaymentTax tables info) repaymentIncome
 
     ml = medicareLevy'
           (ttMedicareLevyRatesAndThresholds tables)
@@ -599,22 +620,27 @@ assessTax tables info =
           (preview (spouseDetails . traverse . spouseTaxableIncome) info)
           (view (incomeTests . dependentChildren) info)
 
+    surchargeIncome =
+      taxable
+      <> fringeBenefits
+      -- TODO net financial investment losses
+      -- TODO net rental property losses
+      <> reportableSuperContributions
+      -- TODO spouse's share of net income of a trust on which the trustee
+      --      must pay tax, if not included in taxable income
+      -- TODO exempt foreign income amounts if taxable income >= $1
+      -- TODO reduction by taxed element of super lump sum
+
     mls =
       let mlsFrac = 1 - getFraction (view mlsExemption info)
-      -- FIXME income for MLS purposes includes fringe benefits; family thresholds apply
-      in getTax (fmap ($* mlsFrac) (ttMedicareLevySurcharge tables)) taxable
-
-    incomeForSurchargePurposes =
-      taxable
-      -- TODO reportable fringe benefits
-      -- TODO net investment losses
-      <> foldOf (paymentSummaries . traverse . reportableEmployerSuperannuationContributions) info
+      -- TODO family thresholds apply
+      in getTax (fmap ($* mlsFrac) (ttMedicareLevySurcharge tables)) surchargeIncome
 
     spouseIncomeForSurchargePurposes =
       fmap (view spouseTaxableIncome) (view spouseDetails info)
 
     phiAdj = assessExcessPrivateHealthRebate
-      incomeForSurchargePurposes
+      surchargeIncome
       spouseIncomeForSurchargePurposes
       (view (incomeTests . dependentChildren) info)
       (ttPHIRebateRates tables)
