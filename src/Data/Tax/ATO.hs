@@ -206,8 +206,8 @@ taxReturn :: 'TaxReturnInfo' FY.FY Rational
 taxReturn = 'newTaxReturnInfo'
   & set 'paymentSummariesIndividualNonBusiness'
       [ 'newPaymentSummaryIndividualNonBusiness' \"53 004 085 616\"  -- ABN
-          & set 'paymentSummaryIndividualNonBusinessGrossPayments'    (Money 180000)
-          & set 'paymentSummaryIndividualNonBusinessTotalTaxWithheld' (Money  50000)
+          & set 'grossPayments'                                       (Money 180000)
+          & set 'totalTaxWithheld'                                    (Money  50000)
           & set 'reportableEmployerSuperannuationContributions'       (Money   3000)
           & set 'reportableFringeBenefits' ('fringeBenefitsEmployerNotExempt' $ Money 7274)
       ]

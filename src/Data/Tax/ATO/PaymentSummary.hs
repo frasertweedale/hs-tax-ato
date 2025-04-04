@@ -27,8 +27,6 @@ module Data.Tax.ATO.PaymentSummary
   -- ** Individual non-business
     PaymentSummaryIndividualNonBusiness
   , newPaymentSummaryIndividualNonBusiness
-  , paymentSummaryIndividualNonBusinessGrossPayments
-  , paymentSummaryIndividualNonBusinessTotalTaxWithheld
 
   -- *** Fringe benefits
   , HasReportableFringeBenefits(..)
@@ -38,6 +36,8 @@ module Data.Tax.ATO.PaymentSummary
   , FBTEmployerExemption(..)
 
   -- ** Classes and helpers
+  , HasGrossPayments(..)
+  , HasTotalTaxWithheld(..)
   , HasReportableEmployerSuperannuationContributions(..)
   , pattern PaymentSummary
   )
@@ -60,8 +60,8 @@ pattern PaymentSummary abn gross tax resc
     <- PaymentSummaryIndividualNonBusiness abn gross tax resc _fb
     where
   PaymentSummary abn gross tax resc = newPaymentSummaryIndividualNonBusiness abn
-    & set paymentSummaryIndividualNonBusinessGrossPayments gross
-    & set paymentSummaryIndividualNonBusinessTotalTaxWithheld tax
+    & set grossPayments gross
+    & set totalTaxWithheld tax
     & set reportableEmployerSuperannuationContributions resc
 {-# DEPRECATED PaymentSummary "see instead PaymentSummaryIndividualNonBusiness" #-}
 
@@ -74,9 +74,9 @@ pattern PaymentSummary abn gross tax resc
 -- To @set@ and @view@ the various fields, these lenses are available:
 --
 -- +------------------------------------------------------+------------------------------------+
--- | 'paymentSummaryIndividualNonBusinessTotalTaxWithheld'| TOTAL TAX WITHHELD                 |
+-- | 'totalTaxWithheld'                                   | TOTAL TAX WITHHELD                 |
 -- +------------------------------------------------------+------------------------------------+
--- | 'paymentSummaryIndividualNonBusinessGrossPayments'   | Gross payments                     |
+-- | 'grossPayments'                                      | GROSS PAYMENTS                     |
 -- +------------------------------------------------------+------------------------------------+
 -- | 'reportableEmployerSuperannuationContributions'      | Reportable employer superannuation |
 -- |                                                      | contributions (do not include      |
@@ -97,10 +97,10 @@ data PaymentSummaryIndividualNonBusiness a = PaymentSummaryIndividualNonBusiness
   }
 
 instance HasTaxableIncome PaymentSummaryIndividualNonBusiness a a where
-  taxableIncome = paymentSummaryIndividualNonBusinessGrossPayments
+  taxableIncome = grossPayments -- TODO allowances, lump sums etc
 
 instance HasTaxWithheld PaymentSummaryIndividualNonBusiness a a where
-  taxWithheld = paymentSummaryIndividualNonBusinessTotalTaxWithheld
+  taxWithheld = totalTaxWithheld
 
 -- | Construct a new payment summary.  All amounts are initially zero.
 newPaymentSummaryIndividualNonBusiness
@@ -108,15 +108,11 @@ newPaymentSummaryIndividualNonBusiness
 newPaymentSummaryIndividualNonBusiness abn =
   PaymentSummaryIndividualNonBusiness abn mempty mempty mempty Nothing
 
-paymentSummaryIndividualNonBusinessGrossPayments
-  :: Lens' (PaymentSummaryIndividualNonBusiness a) (Money a)
-paymentSummaryIndividualNonBusinessGrossPayments =
-  lens _inbGross (\s b -> s { _inbGross = b })
+instance HasTotalTaxWithheld PaymentSummaryIndividualNonBusiness where
+  totalTaxWithheld = lens _inbWithholding (\s b -> s { _inbWithholding = b })
 
-paymentSummaryIndividualNonBusinessTotalTaxWithheld
-  :: Lens' (PaymentSummaryIndividualNonBusiness a) (Money a)
-paymentSummaryIndividualNonBusinessTotalTaxWithheld =
-  lens _inbWithholding (\s b -> s { _inbWithholding = b })
+instance HasGrossPayments PaymentSummaryIndividualNonBusiness where
+  grossPayments = lens _inbGross (\s b -> s { _inbGross = b })
 
 instance HasReportableEmployerSuperannuationContributions PaymentSummaryIndividualNonBusiness where
   reportableEmployerSuperannuationContributions =
@@ -141,6 +137,14 @@ fringeBenefitsEmployerNotExempt x = Just $ ReportableFringeBenefits x EmployerNo
 fringeBenefitsEmployerExempt :: Money a -> Maybe (ReportableFringeBenefits a)
 fringeBenefitsEmployerExempt x = Just $ ReportableFringeBenefits x EmployerFBTExempt
 
+
+-- | Objects which have a /GROSS PAYMENTS/ field.
+class HasGrossPayments s where
+  grossPayments :: Lens' (s a) (Money a)
+
+-- | Objects which have a /GROSS PAYMENTS/ field.
+class HasTotalTaxWithheld s where
+  totalTaxWithheld :: Lens' (s a) (Money a)
 
 -- | Objects which may have Reportable employer superannuation contributions
 class HasReportableEmployerSuperannuationContributions s where
