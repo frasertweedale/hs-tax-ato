@@ -31,6 +31,13 @@ module Data.Tax.ATO.PaymentSummary
   , grossPaymentsTypeP
   , grossPaymentsTypeH
 
+  -- *** Allowances
+  , allowances
+  , Allowance
+  , allowance
+  , allowanceDetail
+  , allowanceAmount
+
   -- *** Fringe benefits
   , HasReportableFringeBenefits(..)
   , fringeBenefitsEmployerNotExempt
@@ -52,6 +59,7 @@ import Control.Lens
 import Data.Tax
 import Data.Tax.ATO.ABN (ABN)
 import Data.Tax.ATO.Common
+import Data.Tax.ATO.Rounding
 
 
 -- | Deprecated pattern provided for compatibility.  Will be removed
@@ -61,7 +69,7 @@ import Data.Tax.ATO.Common
 pattern PaymentSummary
   :: (Num a) => ABN -> Money a -> Money a -> Money a -> PaymentSummaryIndividualNonBusiness a
 pattern PaymentSummary abn gross tax resc
-    <- PaymentSummaryIndividualNonBusiness abn tax gross _type resc _fb
+    <- PaymentSummaryIndividualNonBusiness abn tax gross _type resc _fb _allow
     where
   PaymentSummary abn gross tax resc = newPaymentSummaryIndividualNonBusiness abn
     & set grossPayments gross
@@ -80,7 +88,8 @@ pattern PaymentSummary abn gross tax resc
 -- +-------------------------------------------------+-----------------------------------------+
 -- | 'totalTaxWithheld'                              | TOTAL TAX WITHHELD                      |
 -- +-------------------------------------------------+-----------------------------------------+
--- | 'grossPayments'                                 | GROSS PAYMENTS                          |
+-- | 'grossPayments'                                 | GROSS PAYMENTS.  Do not include amounts |
+-- |                                                 | shown under 'allowances'.               |
 -- +-------------------------------------------------+-----------------------------------------+
 -- | 'grossPaymentsType'                             | Use 'grossPaymentsTypeP' for non super  |
 -- |                                                 | pensions and annuities, or              |
@@ -96,6 +105,8 @@ pattern PaymentSummary abn gross tax resc
 -- |                                                 | FBT exemption status.  See also         |
 -- |                                                 | 'ReportableFringeBenefits'.             |
 -- +-------------------------------------------------+-----------------------------------------+
+-- | 'allowances'                                    | List of 'allowance'.                    |
+-- +-------------------------------------------------+-----------------------------------------+
 --
 data PaymentSummaryIndividualNonBusiness a = PaymentSummaryIndividualNonBusiness
   { _inbABN :: ABN
@@ -104,6 +115,7 @@ data PaymentSummaryIndividualNonBusiness a = PaymentSummaryIndividualNonBusiness
   , _inbGrossPaymentsType :: Maybe GrossPaymentsTypeIndividualNonBusiness
   , _inbRESC :: Money a
   , _inbFringeBenefits :: Maybe (ReportableFringeBenefits a)
+  , _inbAllowances :: [Allowance a]
   }
 
 data GrossPaymentsTypeIndividualNonBusiness
@@ -121,8 +133,11 @@ grossPaymentsTypeP = Just GrossPaymentsTypeP
 grossPaymentsTypeH :: Maybe GrossPaymentsTypeIndividualNonBusiness
 grossPaymentsTypeH = Just GrossPaymentsTypeH
 
-instance HasTaxableIncome PaymentSummaryIndividualNonBusiness a a where
-  taxableIncome = grossPayments -- TODO allowances, lump sums etc
+instance (Num a) => HasTaxableIncome PaymentSummaryIndividualNonBusiness a a where
+  taxableIncome = to $ \s ->
+    view grossPayments s
+    <> foldOf (allowances . traverse . allowanceAmount) s
+    -- TODO lump sums
 
 instance HasTaxWithheld PaymentSummaryIndividualNonBusiness a a where
   taxWithheld = totalTaxWithheld
@@ -131,7 +146,7 @@ instance HasTaxWithheld PaymentSummaryIndividualNonBusiness a a where
 newPaymentSummaryIndividualNonBusiness
   :: (Num a) => ABN -> PaymentSummaryIndividualNonBusiness a
 newPaymentSummaryIndividualNonBusiness abn =
-  PaymentSummaryIndividualNonBusiness abn mempty mempty Nothing mempty Nothing
+  PaymentSummaryIndividualNonBusiness abn mempty mempty Nothing mempty Nothing []
 
 instance HasTotalTaxWithheld PaymentSummaryIndividualNonBusiness where
   totalTaxWithheld = lens _inbWithholding (\s b -> s { _inbWithholding = b })
@@ -146,6 +161,9 @@ instance HasGrossPaymentsType PaymentSummaryIndividualNonBusiness
 instance HasReportableEmployerSuperannuationContributions PaymentSummaryIndividualNonBusiness where
   reportableEmployerSuperannuationContributions =
     lens _inbRESC (\s b -> s { _inbRESC = b })
+
+allowances :: Lens' (PaymentSummaryIndividualNonBusiness a) [Allowance a]
+allowances = lens _inbAllowances (\s b -> s { _inbAllowances = b })
 
 -- | Objects which may have reportable fringe benefit amounts
 class HasReportableFringeBenefits s where
@@ -199,3 +217,26 @@ data FBTEmployerExemption = EmployerNotFBTExempt | EmployerFBTExempt
 data ReportableFringeBenefits a =
   ReportableFringeBenefits (Money a) FBTEmployerExemption
   deriving (Eq, Ord)
+
+
+-- | Use 'allowance' to construct, and lenses 'allowanceDetail' and
+-- 'allowanceAmount' for field access.
+--
+data Allowance a = Allowance
+  { _allowanceDetail :: String
+  , _allowanceAmount :: (Money a)
+  }
+  deriving (Eq, Ord)
+
+allowance
+  :: (RealFrac a)
+  => String   -- ^ Allowance details
+  -> Money a  -- ^ Amount (discards cents)
+  -> Allowance a
+allowance s = Allowance s . wholeDollars
+
+allowanceDetail :: Lens' (Allowance a) String
+allowanceDetail = lens _allowanceDetail (\s b -> s { _allowanceDetail = b })
+
+allowanceAmount :: Lens (Allowance a) (Allowance b) (Money a) (Money b)
+allowanceAmount = lens _allowanceAmount (\s b -> s { _allowanceAmount = b })

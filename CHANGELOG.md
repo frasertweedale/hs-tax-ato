@@ -16,6 +16,10 @@
   The amount is properly included in the surcharge and student loan
   repayment income calculations.
 
+- Implemented **allowances**.  A list of allowances can be added to
+  a payment summary via the `allowances` lens.  Construct allowance
+  values with `allowance :: String -> Money a -> Allowance a`.
+
 - New module `Data.Tax.ATO.Depreciation` provides types and
   functions for calculating decline in value (for deductions).
   Use the `DepreciatingAsset` data type to define depreciating
