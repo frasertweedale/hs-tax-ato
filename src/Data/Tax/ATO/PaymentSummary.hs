@@ -27,6 +27,9 @@ module Data.Tax.ATO.PaymentSummary
   -- ** Individual non-business
     PaymentSummaryIndividualNonBusiness
   , newPaymentSummaryIndividualNonBusiness
+  , GrossPaymentsTypeIndividualNonBusiness(..)
+  , grossPaymentsTypeP
+  , grossPaymentsTypeH
 
   -- *** Fringe benefits
   , HasReportableFringeBenefits(..)
@@ -37,6 +40,7 @@ module Data.Tax.ATO.PaymentSummary
 
   -- ** Classes and helpers
   , HasGrossPayments(..)
+  , HasGrossPaymentsType(..)
   , HasTotalTaxWithheld(..)
   , HasReportableEmployerSuperannuationContributions(..)
   , pattern PaymentSummary
@@ -57,7 +61,7 @@ import Data.Tax.ATO.Common
 pattern PaymentSummary
   :: (Num a) => ABN -> Money a -> Money a -> Money a -> PaymentSummaryIndividualNonBusiness a
 pattern PaymentSummary abn gross tax resc
-    <- PaymentSummaryIndividualNonBusiness abn gross tax resc _fb
+    <- PaymentSummaryIndividualNonBusiness abn tax gross _type resc _fb
     where
   PaymentSummary abn gross tax resc = newPaymentSummaryIndividualNonBusiness abn
     & set grossPayments gross
@@ -73,28 +77,49 @@ pattern PaymentSummary abn gross tax resc
 --
 -- To @set@ and @view@ the various fields, these lenses are available:
 --
--- +------------------------------------------------------+------------------------------------+
--- | 'totalTaxWithheld'                                   | TOTAL TAX WITHHELD                 |
--- +------------------------------------------------------+------------------------------------+
--- | 'grossPayments'                                      | GROSS PAYMENTS                     |
--- +------------------------------------------------------+------------------------------------+
--- | 'reportableEmployerSuperannuationContributions'      | Reportable employer superannuation |
--- |                                                      | contributions (do not include      |
--- |                                                      | compulsory super guarantee amounts)|
--- +------------------------------------------------------+------------------------------------+
--- | 'reportableFringeBenefits'                           | Fringe benefits amount for FBT year|
--- |                                                      | 1 April to 31 March, and employer  |
--- |                                                      | FBT exemption status.  See also    |
--- |                                                      | 'ReportableFringeBenefits'.        |
--- +------------------------------------------------------+------------------------------------+
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'totalTaxWithheld'                              | TOTAL TAX WITHHELD                      |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'grossPayments'                                 | GROSS PAYMENTS                          |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'grossPaymentsType'                             | Use 'grossPaymentsTypeP' for non super  |
+-- |                                                 | pensions and annuities, or              |
+-- |                                                 | 'grossPaymentsTypeH' for working        |
+-- |                                                 | holiday makers. Otherwise, leave unset. |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'reportableEmployerSuperannuationContributions' | Reportable employer superannuation      |
+-- |                                                 | contributions (do not include           |
+-- |                                                 | compulsory super guarantee amounts)     |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'reportableFringeBenefits'                      | Fringe benefits amount for FBT year     |
+-- |                                                 | 1 April to 31 March, and employer       |
+-- |                                                 | FBT exemption status.  See also         |
+-- |                                                 | 'ReportableFringeBenefits'.             |
+-- +-------------------------------------------------+-----------------------------------------+
 --
 data PaymentSummaryIndividualNonBusiness a = PaymentSummaryIndividualNonBusiness
   { _inbABN :: ABN
-  , _inbGross :: Money a
   , _inbWithholding :: Money a
+  , _inbGross :: Money a
+  , _inbGrossPaymentsType :: Maybe GrossPaymentsTypeIndividualNonBusiness
   , _inbRESC :: Money a
   , _inbFringeBenefits :: Maybe (ReportableFringeBenefits a)
   }
+
+data GrossPaymentsTypeIndividualNonBusiness
+  = GrossPaymentsTypeP
+  -- ^ non super pensions or annuity.  See also 'grossPaymentsTypeP'.
+  | GrossPaymentsTypeH
+  -- ^ working holiday makers.  See also 'grossPaymentsTypeH'.
+  deriving (Eq, Ord)
+
+-- | Helper constructor - __P - non super pensions or annuity__
+grossPaymentsTypeP :: Maybe GrossPaymentsTypeIndividualNonBusiness
+grossPaymentsTypeP = Just GrossPaymentsTypeP
+
+-- | Helper constructor - __H - working holiday makers__
+grossPaymentsTypeH :: Maybe GrossPaymentsTypeIndividualNonBusiness
+grossPaymentsTypeH = Just GrossPaymentsTypeH
 
 instance HasTaxableIncome PaymentSummaryIndividualNonBusiness a a where
   taxableIncome = grossPayments -- TODO allowances, lump sums etc
@@ -106,13 +131,17 @@ instance HasTaxWithheld PaymentSummaryIndividualNonBusiness a a where
 newPaymentSummaryIndividualNonBusiness
   :: (Num a) => ABN -> PaymentSummaryIndividualNonBusiness a
 newPaymentSummaryIndividualNonBusiness abn =
-  PaymentSummaryIndividualNonBusiness abn mempty mempty mempty Nothing
+  PaymentSummaryIndividualNonBusiness abn mempty mempty Nothing mempty Nothing
 
 instance HasTotalTaxWithheld PaymentSummaryIndividualNonBusiness where
   totalTaxWithheld = lens _inbWithholding (\s b -> s { _inbWithholding = b })
 
 instance HasGrossPayments PaymentSummaryIndividualNonBusiness where
   grossPayments = lens _inbGross (\s b -> s { _inbGross = b })
+
+instance HasGrossPaymentsType PaymentSummaryIndividualNonBusiness
+    (Maybe GrossPaymentsTypeIndividualNonBusiness) where
+  grossPaymentsType = lens _inbGrossPaymentsType (\s b -> s { _inbGrossPaymentsType = b })
 
 instance HasReportableEmployerSuperannuationContributions PaymentSummaryIndividualNonBusiness where
   reportableEmployerSuperannuationContributions =
@@ -141,6 +170,12 @@ fringeBenefitsEmployerExempt x = Just $ ReportableFringeBenefits x EmployerFBTEx
 -- | Objects which have a /GROSS PAYMENTS/ field.
 class HasGrossPayments s where
   grossPayments :: Lens' (s a) (Money a)
+
+-- | Objects which have a /gross payments type/ field.
+-- The value type may vary.
+--
+class HasGrossPaymentsType s a where
+  grossPaymentsType :: Lens' (s any) a
 
 -- | Objects which have a /GROSS PAYMENTS/ field.
 class HasTotalTaxWithheld s where
