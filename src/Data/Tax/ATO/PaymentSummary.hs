@@ -45,6 +45,15 @@ module Data.Tax.ATO.PaymentSummary
   , ReportableFringeBenefits(..)
   , FBTEmployerExemption(..)
 
+  -- *** Lump sum A
+  , HasLumpSumA(..)
+  , lumpSumATypeR
+  , lumpSumATypeT
+  , LumpSumA
+  , lumpSumAType
+  , lumpSumAAmount
+  , LumpSumAType(..)
+
   -- ** Classes and helpers
   , HasGrossPayments(..)
   , HasGrossPaymentsType(..)
@@ -69,7 +78,7 @@ import Data.Tax.ATO.Rounding
 pattern PaymentSummary
   :: (Num a) => ABN -> Money a -> Money a -> Money a -> PaymentSummaryIndividualNonBusiness a
 pattern PaymentSummary abn gross tax resc
-    <- PaymentSummaryIndividualNonBusiness abn tax gross _type resc _fb _allow
+    <- PaymentSummaryIndividualNonBusiness abn tax gross _type resc _fb _allow _lumpA
     where
   PaymentSummary abn gross tax resc = newPaymentSummaryIndividualNonBusiness abn
     & set grossPayments gross
@@ -107,6 +116,9 @@ pattern PaymentSummary abn gross tax resc
 -- +-------------------------------------------------+-----------------------------------------+
 -- | 'allowances'                                    | List of 'allowance'.                    |
 -- +-------------------------------------------------+-----------------------------------------+
+-- | 'lumpSumA'                                      | Lump sum A. Use 'lumpSumATypeR' or      |
+-- |                                                 | 'lumpSumATypeT' to construct.           |
+-- +-------------------------------------------------+-----------------------------------------+
 --
 data PaymentSummaryIndividualNonBusiness a = PaymentSummaryIndividualNonBusiness
   { _inbABN :: ABN
@@ -116,6 +128,7 @@ data PaymentSummaryIndividualNonBusiness a = PaymentSummaryIndividualNonBusiness
   , _inbRESC :: Money a
   , _inbFringeBenefits :: Maybe (ReportableFringeBenefits a)
   , _inbAllowances :: [Allowance a]
+  , _inbLumpSumA :: Maybe (LumpSumA a)
   }
 
 data GrossPaymentsTypeIndividualNonBusiness
@@ -137,7 +150,8 @@ instance (Num a) => HasTaxableIncome PaymentSummaryIndividualNonBusiness a a whe
   taxableIncome = to $ \s ->
     view grossPayments s
     <> foldOf (allowances . traverse . allowanceAmount) s
-    -- TODO lump sums
+    <> foldOf (lumpSumA . traverse . lumpSumAAmount) s
+    -- TODO lump sums B, D, E
 
 instance HasTaxWithheld PaymentSummaryIndividualNonBusiness a a where
   taxWithheld = totalTaxWithheld
@@ -146,7 +160,7 @@ instance HasTaxWithheld PaymentSummaryIndividualNonBusiness a a where
 newPaymentSummaryIndividualNonBusiness
   :: (Num a) => ABN -> PaymentSummaryIndividualNonBusiness a
 newPaymentSummaryIndividualNonBusiness abn =
-  PaymentSummaryIndividualNonBusiness abn mempty mempty Nothing mempty Nothing []
+  PaymentSummaryIndividualNonBusiness abn mempty mempty Nothing mempty Nothing [] Nothing
 
 instance HasTotalTaxWithheld PaymentSummaryIndividualNonBusiness where
   totalTaxWithheld = lens _inbWithholding (\s b -> s { _inbWithholding = b })
@@ -240,3 +254,42 @@ allowanceDetail = lens _allowanceDetail (\s b -> s { _allowanceDetail = b })
 
 allowanceAmount :: Lens (Allowance a) (Allowance b) (Money a) (Money b)
 allowanceAmount = lens _allowanceAmount (\s b -> s { _allowanceAmount = b })
+
+
+-- | Use 'lumpSumATypeR' or 'lumpSumATypeT' to construct, and lenses
+-- 'lumpSumAType' and 'lumpSumAAmount' for field access.
+data LumpSumA a = LumpSumA
+  { _lumpSumAType   :: LumpSumAType
+  , _lumpSumAAmount :: Money a
+  }
+  deriving (Eq, Ord)
+
+data LumpSumAType
+  = LumpSumATypeR
+  -- ^ if the payment was made for a genuine redundancy, invalidity
+  -- or under an early retirement scheme
+  | LumpSumATypeT
+  -- ^ if the payment was made for any other reason
+  deriving (Eq, Ord)
+
+-- | A /lump sum A/ payment made for genuine redundancy, invalidity
+-- or under an early retirement scheme.  See also 'lumpSumATypeT'.
+lumpSumATypeR :: (RealFrac a) => Money a -> LumpSumA a
+lumpSumATypeR = LumpSumA LumpSumATypeR . wholeDollars
+
+-- | A /lump sum A/ payment made for any other reason.
+-- See also 'lumpSumATypeR'.
+lumpSumATypeT :: (RealFrac a) => Money a -> LumpSumA a
+lumpSumATypeT = LumpSumA LumpSumATypeT . wholeDollars
+
+lumpSumAType :: Lens' (LumpSumA a) LumpSumAType
+lumpSumAType = lens _lumpSumAType (\s b -> s { _lumpSumAType = b })
+
+lumpSumAAmount :: Lens (LumpSumA a) (LumpSumA b) (Money a) (Money b)
+lumpSumAAmount = lens _lumpSumAAmount (\s b -> s { _lumpSumAAmount = b })
+
+class HasLumpSumA s where
+  lumpSumA :: Lens' (s a) (Maybe (LumpSumA a))
+
+instance HasLumpSumA PaymentSummaryIndividualNonBusiness where
+  lumpSumA = lens _inbLumpSumA (\s b -> s { _inbLumpSumA = b })
