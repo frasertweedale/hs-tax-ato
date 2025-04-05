@@ -54,6 +54,9 @@ module Data.Tax.ATO.PaymentSummary
   , lumpSumAAmount
   , LumpSumAType(..)
 
+  -- *** Lump sum B
+  , lumpSumB
+
   -- ** Classes and helpers
   , HasGrossPayments(..)
   , HasGrossPaymentsType(..)
@@ -78,7 +81,7 @@ import Data.Tax.ATO.Rounding
 pattern PaymentSummary
   :: (Num a) => ABN -> Money a -> Money a -> Money a -> PaymentSummaryIndividualNonBusiness a
 pattern PaymentSummary abn gross tax resc
-    <- PaymentSummaryIndividualNonBusiness abn tax gross _type resc _fb _allow _lumpA
+    <- PaymentSummaryIndividualNonBusiness abn tax gross _type resc _fb _allow _lumpA _lumpB
     where
   PaymentSummary abn gross tax resc = newPaymentSummaryIndividualNonBusiness abn
     & set grossPayments gross
@@ -119,6 +122,8 @@ pattern PaymentSummary abn gross tax resc
 -- | 'lumpSumA'                                      | Lump sum A. Use 'lumpSumATypeR' or      |
 -- |                                                 | 'lumpSumATypeT' to construct.           |
 -- +-------------------------------------------------+-----------------------------------------+
+-- | 'lumpSumB'                                      | Lump sum B.                             |
+-- +-------------------------------------------------+-----------------------------------------+
 --
 data PaymentSummaryIndividualNonBusiness a = PaymentSummaryIndividualNonBusiness
   { _inbABN :: ABN
@@ -129,7 +134,22 @@ data PaymentSummaryIndividualNonBusiness a = PaymentSummaryIndividualNonBusiness
   , _inbFringeBenefits :: Maybe (ReportableFringeBenefits a)
   , _inbAllowances :: [Allowance a]
   , _inbLumpSumA :: Maybe (LumpSumA a)
+  , _inbLumpSumB :: Money a
   }
+
+-- | Construct a new payment summary.  All amounts are initially zero.
+newPaymentSummaryIndividualNonBusiness
+  :: (Num a) => ABN -> PaymentSummaryIndividualNonBusiness a
+newPaymentSummaryIndividualNonBusiness abn =
+  PaymentSummaryIndividualNonBusiness abn
+    mempty    -- total tax withheld
+    mempty    -- gross payments
+    Nothing   -- gross payments type
+    mempty    -- reportable super contributions
+    Nothing   -- reportable fringe benefits
+    []        -- allowances
+    Nothing   -- lump sum a
+    mempty    -- lump sum b
 
 data GrossPaymentsTypeIndividualNonBusiness
   = GrossPaymentsTypeP
@@ -146,21 +166,16 @@ grossPaymentsTypeP = Just GrossPaymentsTypeP
 grossPaymentsTypeH :: Maybe GrossPaymentsTypeIndividualNonBusiness
 grossPaymentsTypeH = Just GrossPaymentsTypeH
 
-instance (Num a) => HasTaxableIncome PaymentSummaryIndividualNonBusiness a a where
+instance (RealFrac a) => HasTaxableIncome PaymentSummaryIndividualNonBusiness a a where
   taxableIncome = to $ \s ->
     view grossPayments s
     <> foldOf (allowances . traverse . allowanceAmount) s
     <> foldOf (lumpSumA . traverse . lumpSumAAmount) s
-    -- TODO lump sums B, D, E
+    <> view (lumpSumB . to (wholeDollars . ($/ 20))) s
+    -- TODO lump sums D, E
 
 instance HasTaxWithheld PaymentSummaryIndividualNonBusiness a a where
   taxWithheld = totalTaxWithheld
-
--- | Construct a new payment summary.  All amounts are initially zero.
-newPaymentSummaryIndividualNonBusiness
-  :: (Num a) => ABN -> PaymentSummaryIndividualNonBusiness a
-newPaymentSummaryIndividualNonBusiness abn =
-  PaymentSummaryIndividualNonBusiness abn mempty mempty Nothing mempty Nothing [] Nothing
 
 instance HasTotalTaxWithheld PaymentSummaryIndividualNonBusiness where
   totalTaxWithheld = lens _inbWithholding (\s b -> s { _inbWithholding = b })
@@ -293,3 +308,7 @@ class HasLumpSumA s where
 
 instance HasLumpSumA PaymentSummaryIndividualNonBusiness where
   lumpSumA = lens _inbLumpSumA (\s b -> s { _inbLumpSumA = b })
+
+
+lumpSumB :: Lens' (PaymentSummaryIndividualNonBusiness a) (Money a)
+lumpSumB = lens _inbLumpSumB (\s b -> s { _inbLumpSumB = b })
