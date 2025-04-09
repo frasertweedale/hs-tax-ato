@@ -159,9 +159,6 @@ newPaymentSummaryIndividualNonBusiness abn =
     mempty    -- lump sum b
     mempty    -- lump sum d
 
-instance HasLumpSumD PaymentSummaryIndividualNonBusiness where
-  lumpSumD = lens _inbLumpSumD (\s b -> s { _inbLumpSumD = b })
-
 data GrossPaymentsTypeIndividualNonBusiness
   = GrossPaymentsTypeP
   -- ^ non super pensions or annuity.  See also 'grossPaymentsTypeP'.
@@ -202,27 +199,21 @@ instance HasReportableEmployerSuperannuationContributions PaymentSummaryIndividu
   reportableEmployerSuperannuationContributions =
     lens _inbRESC (\s b -> s { _inbRESC = b })
 
-allowances :: Lens' (PaymentSummaryIndividualNonBusiness a) [Allowance a]
-allowances = lens _inbAllowances (\s b -> s { _inbAllowances = b })
-
--- | Objects which may have reportable fringe benefit amounts
-class HasReportableFringeBenefits s where
-  reportableFringeBenefits :: Lens' (s a) (Maybe (ReportableFringeBenefits a))
-
 instance HasReportableFringeBenefits PaymentSummaryIndividualNonBusiness where
   reportableFringeBenefits =
     lens _inbFringeBenefits (\s b -> s { _inbFringeBenefits = b })
 
+instance HasLumpSumA PaymentSummaryIndividualNonBusiness where
+  lumpSumA = lens _inbLumpSumA (\s b -> s { _inbLumpSumA = b })
 
--- | Helper constructor for fringe benefits amount (employer not exempt from FBT).
--- See also 'fringeBenefitsEmployerExempt'.
-fringeBenefitsEmployerNotExempt :: Money a -> Maybe (ReportableFringeBenefits a)
-fringeBenefitsEmployerNotExempt x = Just $ ReportableFringeBenefits x EmployerNotFBTExempt
+lumpSumB :: Lens' (PaymentSummaryIndividualNonBusiness a) (Money a)
+lumpSumB = lens _inbLumpSumB (\s b -> s { _inbLumpSumB = b })
 
--- | Helper constructor for fringe benefits amount (employer exempt from FBT)
--- See also 'fringeBenefitsEmployerNotExempt'.
-fringeBenefitsEmployerExempt :: Money a -> Maybe (ReportableFringeBenefits a)
-fringeBenefitsEmployerExempt x = Just $ ReportableFringeBenefits x EmployerFBTExempt
+instance HasLumpSumD PaymentSummaryIndividualNonBusiness where
+  lumpSumD = lens _inbLumpSumD (\s b -> s { _inbLumpSumD = b })
+
+allowances :: Lens' (PaymentSummaryIndividualNonBusiness a) [Allowance a]
+allowances = lens _inbAllowances (\s b -> s { _inbAllowances = b })
 
 
 -- | Objects which have a /GROSS PAYMENTS/ field.
@@ -243,6 +234,20 @@ class HasTotalTaxWithheld s where
 class HasReportableEmployerSuperannuationContributions s where
   reportableEmployerSuperannuationContributions :: Lens' (s a) (Money a)
 
+
+-- | Objects which may have reportable fringe benefit amounts
+class HasReportableFringeBenefits s where
+  reportableFringeBenefits :: Lens' (s a) (Maybe (ReportableFringeBenefits a))
+
+-- | Helper constructor for fringe benefits amount (employer not exempt from FBT).
+-- See also 'fringeBenefitsEmployerExempt'.
+fringeBenefitsEmployerNotExempt :: Money a -> Maybe (ReportableFringeBenefits a)
+fringeBenefitsEmployerNotExempt x = Just $ ReportableFringeBenefits x EmployerNotFBTExempt
+
+-- | Helper constructor for fringe benefits amount (employer exempt from FBT)
+-- See also 'fringeBenefitsEmployerNotExempt'.
+fringeBenefitsEmployerExempt :: Money a -> Maybe (ReportableFringeBenefits a)
+fringeBenefitsEmployerExempt x = Just $ ReportableFringeBenefits x EmployerFBTExempt
 
 data FBTEmployerExemption = EmployerNotFBTExempt | EmployerFBTExempt
   deriving (Eq, Ord)
@@ -316,13 +321,6 @@ lumpSumAAmount = lens _lumpSumAAmount (\s b -> s { _lumpSumAAmount = b })
 
 class HasLumpSumA s where
   lumpSumA :: Lens' (s a) (Maybe (LumpSumA a))
-
-instance HasLumpSumA PaymentSummaryIndividualNonBusiness where
-  lumpSumA = lens _inbLumpSumA (\s b -> s { _inbLumpSumA = b })
-
-
-lumpSumB :: Lens' (PaymentSummaryIndividualNonBusiness a) (Money a)
-lumpSumB = lens _inbLumpSumB (\s b -> s { _inbLumpSumB = b })
 
 
 class HasLumpSumD s where
