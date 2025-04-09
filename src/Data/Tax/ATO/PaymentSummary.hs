@@ -57,6 +57,9 @@ module Data.Tax.ATO.PaymentSummary
   -- *** Lump sum B
   , lumpSumB
 
+  -- *** Lump sum D
+  , HasLumpSumD(..)
+
   -- ** Classes and helpers
   , HasGrossPayments(..)
   , HasGrossPaymentsType(..)
@@ -80,9 +83,10 @@ import Data.Tax.ATO.Rounding
 --
 pattern PaymentSummary
   :: (Num a) => ABN -> Money a -> Money a -> Money a -> PaymentSummaryIndividualNonBusiness a
-pattern PaymentSummary abn gross tax resc
-    <- PaymentSummaryIndividualNonBusiness abn tax gross _type resc _fb _allow _lumpA _lumpB
-    where
+pattern PaymentSummary abn gross tax resc <-
+  PaymentSummaryIndividualNonBusiness abn tax gross _type resc _fb
+    _allow _lumpA _lumpB _lumpD
+  where
   PaymentSummary abn gross tax resc = newPaymentSummaryIndividualNonBusiness abn
     & set grossPayments gross
     & set totalTaxWithheld tax
@@ -124,6 +128,8 @@ pattern PaymentSummary abn gross tax resc
 -- +-------------------------------------------------+-----------------------------------------+
 -- | 'lumpSumB'                                      | Lump sum B.                             |
 -- +-------------------------------------------------+-----------------------------------------+
+-- | 'lumpSumD'                                      | Lump sum D.                             |
+-- +-------------------------------------------------+-----------------------------------------+
 --
 data PaymentSummaryIndividualNonBusiness a = PaymentSummaryIndividualNonBusiness
   { _inbABN :: ABN
@@ -135,6 +141,7 @@ data PaymentSummaryIndividualNonBusiness a = PaymentSummaryIndividualNonBusiness
   , _inbAllowances :: [Allowance a]
   , _inbLumpSumA :: Maybe (LumpSumA a)
   , _inbLumpSumB :: Money a
+  , _inbLumpSumD :: Money a
   }
 
 -- | Construct a new payment summary.  All amounts are initially zero.
@@ -150,6 +157,10 @@ newPaymentSummaryIndividualNonBusiness abn =
     []        -- allowances
     Nothing   -- lump sum a
     mempty    -- lump sum b
+    mempty    -- lump sum d
+
+instance HasLumpSumD PaymentSummaryIndividualNonBusiness where
+  lumpSumD = lens _inbLumpSumD (\s b -> s { _inbLumpSumD = b })
 
 data GrossPaymentsTypeIndividualNonBusiness
   = GrossPaymentsTypeP
@@ -172,7 +183,7 @@ instance (RealFrac a) => HasTaxableIncome PaymentSummaryIndividualNonBusiness a 
     <> foldOf (allowances . traverse . allowanceAmount) s
     <> foldOf (lumpSumA . traverse . lumpSumAAmount) s
     <> view (lumpSumB . to (wholeDollars . ($/ 20))) s
-    -- TODO lump sums D, E
+    -- TODO lump sums E
 
 instance HasTaxWithheld PaymentSummaryIndividualNonBusiness a a where
   taxWithheld = totalTaxWithheld
@@ -312,3 +323,7 @@ instance HasLumpSumA PaymentSummaryIndividualNonBusiness where
 
 lumpSumB :: Lens' (PaymentSummaryIndividualNonBusiness a) (Money a)
 lumpSumB = lens _inbLumpSumB (\s b -> s { _inbLumpSumB = b })
+
+
+class HasLumpSumD s where
+  lumpSumD :: Lens' (s a) (Money a)
