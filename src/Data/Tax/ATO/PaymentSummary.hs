@@ -63,6 +63,9 @@ module Data.Tax.ATO.PaymentSummary
   -- *** Lump sum E
   , HasLumpSumE(..)
 
+  -- *** Exempt foreign employment income
+  , exemptForeignEmploymentIncome
+
   -- ** Payer details
   , PayerDetails
   , newPayerDetails
@@ -98,7 +101,7 @@ pattern PaymentSummary
   :: (Num a) => PayerDetails -> Money a -> Money a -> Money a -> PaymentSummaryIndividualNonBusiness a
 pattern PaymentSummary payer gross tax resc <-
   PaymentSummaryIndividualNonBusiness payer tax gross _type resc _fb
-    _allow _lumpA _lumpB _lumpD _lumpE
+    _allow _lumpA _lumpB _lumpD _lumpE _foreign
   where
   PaymentSummary payer gross tax resc = newPaymentSummaryIndividualNonBusiness payer
     & set grossPayments gross
@@ -120,7 +123,9 @@ pattern PaymentSummary payer gross tax resc <-
 -- | 'totalTaxWithheld'                              | TOTAL TAX WITHHELD                      |
 -- +-------------------------------------------------+-----------------------------------------+
 -- | 'grossPayments'                                 | GROSS PAYMENTS.  Do not include amounts |
--- |                                                 | shown under 'allowances'.               |
+-- |                                                 | shown at 'allowances', 'lumpSumA',      |
+-- |                                                 | 'lumpSumB', 'lumpSumD', 'lumpSumE',     |
+-- |                                                 | or 'exemptForeignEmploymentIncome'.     |
 -- +-------------------------------------------------+-----------------------------------------+
 -- | 'grossPaymentsType'                             | Use 'grossPaymentsTypeP' for non super  |
 -- |                                                 | pensions and annuities, or              |
@@ -135,6 +140,8 @@ pattern PaymentSummary payer gross tax resc <-
 -- |                                                 | 1 April to 31 March, and employer       |
 -- |                                                 | FBT exemption status.  See also         |
 -- |                                                 | 'ReportableFringeBenefits'.             |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'exemptForeignEmploymentIncome'                 |                                         |
 -- +-------------------------------------------------+-----------------------------------------+
 -- | 'allowances'                                    | List of 'allowance'.                    |
 -- +-------------------------------------------------+-----------------------------------------+
@@ -163,6 +170,7 @@ data PaymentSummaryIndividualNonBusiness a = PaymentSummaryIndividualNonBusiness
   , _inbLumpSumB :: Money a
   , _inbLumpSumD :: Money a
   , _inbLumpSumE :: Money a
+  , _inbForeign :: Money a
   }
 
 -- | Construct a new payment summary.  All amounts are initially zero.
@@ -180,6 +188,7 @@ newPaymentSummaryIndividualNonBusiness payer =
     mempty    -- lump sum b
     mempty    -- lump sum d
     mempty    -- lump sum e
+    mempty    -- exempt foreign employment income
 
 data GrossPaymentsTypeIndividualNonBusiness
   = GrossPaymentsTypeP
@@ -239,6 +248,9 @@ instance HasLumpSumD PaymentSummaryIndividualNonBusiness where
 
 instance HasLumpSumE PaymentSummaryIndividualNonBusiness where
   lumpSumE = lens _inbLumpSumE (\s b -> s { _inbLumpSumE = b })
+
+exemptForeignEmploymentIncome :: Lens' (PaymentSummaryIndividualNonBusiness a) (Money a)
+exemptForeignEmploymentIncome = lens _inbForeign (\s b -> s { _inbForeign = b })
 
 allowances :: Lens' (PaymentSummaryIndividualNonBusiness a) [Allowance a]
 allowances = lens _inbAllowances (\s b -> s { _inbAllowances = b })

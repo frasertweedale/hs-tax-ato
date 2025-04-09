@@ -606,13 +606,16 @@ assessTax tables info =
       foldOf (paymentSummariesIndividualNonBusiness . traverse . reportableEmployerSuperannuationContributions) info
       <> view (deductions . personalSuperannuationContributions) info
 
+    exemptForeignIncome =
+      foldOf (paymentSummariesIndividualNonBusiness . traverse . exemptForeignEmploymentIncome) info
+
     repaymentIncome =
       taxable
       <> fringeBenefits
       -- TODO net financial investment losses
       -- TODO net rental property losses
       <> reportableSuperContributions
-      -- TODO exempt foreign employment income
+      <> exemptForeignIncome
 
     studyRepayment = getTax (studyAndTrainingLoanRepaymentTax tables info) repaymentIncome
 
@@ -630,7 +633,7 @@ assessTax tables info =
       <> reportableSuperContributions
       -- TODO spouse's share of net income of a trust on which the trustee
       --      must pay tax, if not included in taxable income
-      -- TODO exempt foreign income amounts if taxable income >= $1
+      <> ( if taxable > mempty then exemptForeignIncome else mempty )
       -- TODO reduction by taxed element of super lump sum
 
     mls =
