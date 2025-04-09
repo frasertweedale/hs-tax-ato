@@ -49,6 +49,7 @@ module Data.Tax.ATO
   , paymentSummariesIndividualNonBusiness
   , paymentSummariesForeignEmployment
   , paymentSummariesBusinessAndPersonalServicesIncome
+  , paymentSummariesWithholdingWhereABNNotQuoted
   , paymentSummaries
 
   -- *** Interest
@@ -321,6 +322,9 @@ dependentChildren =
 -- |                                                      | business and personal services   |
 -- |                                                      | income                           |
 -- +------------------------------------------------------+----------------------------------+
+-- | 'paymentSummariesWithholdingWhereABNNotQuoted'       | PAYG payment summaries -         |
+-- |                                                      | withholding where ABN not quoted |
+-- +------------------------------------------------------+----------------------------------+
 -- | 'interest'                                           | Interest income and tax withheld |
 -- +------------------------------------------------------+----------------------------------+
 -- | 'dividends'                                          | Dividend data                    |
@@ -350,6 +354,7 @@ data TaxReturnInfo y a = TaxReturnInfo
   , _paymentSummariesIndividualNonBusiness :: [PaymentSummaryIndividualNonBusiness a]
   , _paymentSummariesForeignEmployment :: [PaymentSummaryForeignEmployment a]
   , _paymentSummariesBusinessAndPersonalServicesIncome :: [PaymentSummaryBusinessAndPersonalServicesIncome a]
+  , _paymentSummariesWithholdingWhereABNNotQuoted :: [PaymentSummaryWithholdingWhereABNNotQuoted a]
   , _interest :: GrossAndWithheld a
   , _dividends :: [Dividend a]
   , _ess :: ESSStatement a
@@ -381,6 +386,7 @@ newTaxReturnInfo = TaxReturnInfo
   [] -- payment summaries - individual non-business
   [] -- payment summaries - foreign employment
   [] -- payment summaries - business and personal services income
+  [] -- payment summaries - withholding where ABN not quoted
   mempty -- interest
   mempty -- dividends
   mempty -- ESS
@@ -433,6 +439,10 @@ paymentSummariesForeignEmployment =
 paymentSummariesBusinessAndPersonalServicesIncome :: Lens' (TaxReturnInfo y a) [PaymentSummaryBusinessAndPersonalServicesIncome a]
 paymentSummariesBusinessAndPersonalServicesIncome =
   lens _paymentSummariesBusinessAndPersonalServicesIncome (\s b -> s { _paymentSummariesBusinessAndPersonalServicesIncome = b })
+
+paymentSummariesWithholdingWhereABNNotQuoted :: Lens' (TaxReturnInfo y a) [PaymentSummaryWithholdingWhereABNNotQuoted a]
+paymentSummariesWithholdingWhereABNNotQuoted =
+  lens _paymentSummariesWithholdingWhereABNNotQuoted (\s b -> s { _paymentSummariesWithholdingWhereABNNotQuoted = b })
 
 -- | Deprecated synonym for 'paymentSummariesIndividualNonBusiness'
 paymentSummaries :: Lens' (TaxReturnInfo y a) [PaymentSummaryIndividualNonBusiness a]
@@ -587,6 +597,7 @@ instance (RealFrac a) => HasTaxableIncome (TaxReturnInfo y) a a where
         [ view (paymentSummariesIndividualNonBusiness . taxableIncome) info
         , view (paymentSummariesForeignEmployment . taxableIncome) info
         , view (paymentSummariesBusinessAndPersonalServicesIncome . taxableIncome) info
+        , view (paymentSummariesWithholdingWhereABNNotQuoted . taxableIncome) info
         , view (interest . taxableIncome) info
         , view (dividends . taxableIncome) info
         , view (ess . taxableIncome) info
@@ -606,6 +617,7 @@ instance (Num a) => HasTaxWithheld (TaxReturnInfo y) a a where
     view (paymentSummariesIndividualNonBusiness . taxWithheld) info
     <> view (paymentSummariesForeignEmployment . taxWithheld) info
     <> view (paymentSummariesBusinessAndPersonalServicesIncome . taxWithheld) info
+    <> view (paymentSummariesWithholdingWhereABNNotQuoted . taxWithheld) info
     <> view (interest . taxWithheld) info
     <> view (ess . essTFNAmounts) info
 

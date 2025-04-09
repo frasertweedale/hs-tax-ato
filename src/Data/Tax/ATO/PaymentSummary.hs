@@ -76,6 +76,10 @@ module Data.Tax.ATO.PaymentSummary
   , PaymentSummaryBusinessAndPersonalServicesIncome
   , newPaymentSummaryBusinessAndPersonalServicesIncome
 
+  -- ** Withholding where ABN not quoted
+  , PaymentSummaryWithholdingWhereABNNotQuoted
+  , newPaymentSummaryWithholdingWhereABNNotQuoted
+
   -- ** Payer details
   , PayerDetails
   , newPayerDetails
@@ -443,6 +447,53 @@ instance HasGrossPayments PaymentSummaryBusinessAndPersonalServicesIncome where
 instance HasReportableEmployerSuperannuationContributions PaymentSummaryBusinessAndPersonalServicesIncome where
   reportableEmployerSuperannuationContributions =
     lens _bpsiRESC (\s b -> s { _bpsiRESC = b })
+
+
+-- | PAYG payment summary - withholding where ABN not quoted (other
+-- than those covered by annual investment income reporting).
+--
+-- Use 'newPaymentSummaryWithholdingWhereABNNotQuoted' to construct this data
+-- type (all amounts initially zero).
+--
+-- To @set@ and @view@ the various fields, these lenses are available:
+--
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'payerDetails'                                  | Use 'newPayerDetails' to construct.     |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'totalTaxWithheld'                              | TOTAL AMOUNT WITHHELD                   |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'grossPayments'                                 | Gross payment (including the market     |
+-- |                                                 | value of non-cash benefits).            |
+-- +-------------------------------------------------+-----------------------------------------+
+--
+data PaymentSummaryWithholdingWhereABNNotQuoted a = PaymentSummaryWithholdingWhereABNNotQuoted
+  { _noabnPayer :: PayerDetails
+  , _noabnWithholding :: Money a
+  , _noabnGross :: Money a
+  }
+
+-- | Construct a new payment summary.  All amounts are initially zero.
+newPaymentSummaryWithholdingWhereABNNotQuoted
+  :: (Num a) => PayerDetails -> PaymentSummaryWithholdingWhereABNNotQuoted a
+newPaymentSummaryWithholdingWhereABNNotQuoted payer =
+  PaymentSummaryWithholdingWhereABNNotQuoted payer
+    mempty    -- total tax withheld
+    mempty    -- gross payments
+
+instance HasTaxableIncome PaymentSummaryWithholdingWhereABNNotQuoted a a where
+  taxableIncome = grossPayments
+
+instance HasTaxWithheld PaymentSummaryWithholdingWhereABNNotQuoted a a where
+  taxWithheld = totalTaxWithheld
+
+instance HasPayerDetails PaymentSummaryWithholdingWhereABNNotQuoted where
+  payerDetails = lens _noabnPayer (\s b -> s { _noabnPayer = b })
+
+instance HasTotalTaxWithheld PaymentSummaryWithholdingWhereABNNotQuoted where
+  totalTaxWithheld = lens _noabnWithholding (\s b -> s { _noabnWithholding = b })
+
+instance HasGrossPayments PaymentSummaryWithholdingWhereABNNotQuoted where
+  grossPayments = lens _noabnGross (\s b -> s { _noabnGross = b })
 
 
 -- | Objects which have a /GROSS PAYMENTS/ field.
