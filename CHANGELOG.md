@@ -20,7 +20,7 @@
   a payment summary via the `allowances` lens.  Construct allowance
   values with `allowance :: String -> Money a -> Allowance a`.
 
-- Implemented **non-super lump sum A, B and D** payments.
+- Implemented **non-super lump sum A, B, D and E** payments.
 
 - New module `Data.Tax.ATO.Depreciation` provides types and
   functions for calculating decline in value (for deductions).
