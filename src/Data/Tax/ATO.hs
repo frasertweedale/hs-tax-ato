@@ -47,6 +47,7 @@ module Data.Tax.ATO
 
   -- *** PAYG Payment Summaries
   , paymentSummariesIndividualNonBusiness
+  , paymentSummariesForeignEmployment
   , paymentSummaries
 
   -- *** Interest
@@ -312,6 +313,9 @@ dependentChildren =
 -- | 'paymentSummariesIndividualNonBusiness'              | PAYG payment summaries -         |
 -- |                                                      | individual non-business          |
 -- +------------------------------------------------------+----------------------------------+
+-- | 'paymentSummariesForeignEmployment'                  | PAYG payment summaries -         |
+-- |                                                      | foreign employment               |
+-- +------------------------------------------------------+----------------------------------+
 -- | 'interest'                                           | Interest income and tax withheld |
 -- +------------------------------------------------------+----------------------------------+
 -- | 'dividends'                                          | Dividend data                    |
@@ -339,6 +343,7 @@ data TaxReturnInfo y a = TaxReturnInfo
   , _helpBalance :: Money a
   , _sfssBalance :: Money a
   , _paymentSummariesIndividualNonBusiness :: [PaymentSummaryIndividualNonBusiness a]
+  , _paymentSummariesForeignEmployment :: [PaymentSummaryForeignEmployment a]
   , _interest :: GrossAndWithheld a
   , _dividends :: [Dividend a]
   , _ess :: ESSStatement a
@@ -367,7 +372,8 @@ newTaxReturnInfo = TaxReturnInfo
   daysAll  -- MLS exemption
   mempty -- HELP
   mempty -- SFSS
-  mempty -- payment summaries
+  mempty -- payment summaries - individual non-business
+  mempty -- payment summaries - foreign employment
   mempty -- interest
   mempty -- dividends
   mempty -- ESS
@@ -412,6 +418,10 @@ mlsExemption = lens _mlsExemption (\s b -> s { _mlsExemption = b })
 paymentSummariesIndividualNonBusiness :: Lens' (TaxReturnInfo y a) [PaymentSummaryIndividualNonBusiness a]
 paymentSummariesIndividualNonBusiness =
   lens _paymentSummariesIndividualNonBusiness (\s b -> s { _paymentSummariesIndividualNonBusiness = b })
+
+paymentSummariesForeignEmployment :: Lens' (TaxReturnInfo y a) [PaymentSummaryForeignEmployment a]
+paymentSummariesForeignEmployment =
+  lens _paymentSummariesForeignEmployment (\s b -> s { _paymentSummariesForeignEmployment = b })
 
 -- | Deprecated synonym for 'paymentSummariesIndividualNonBusiness'
 paymentSummaries :: Lens' (TaxReturnInfo y a) [PaymentSummaryIndividualNonBusiness a]
@@ -564,6 +574,7 @@ instance (RealFrac a) => HasTaxableIncome (TaxReturnInfo y) a a where
       cf = view capitalLossCarryForward info
       gross = foldMap wholeDollars
         [ view (paymentSummariesIndividualNonBusiness . taxableIncome) info
+        , view (paymentSummariesForeignEmployment . taxableIncome) info
         , view (interest . taxableIncome) info
         , view (dividends . taxableIncome) info
         , view (ess . taxableIncome) info
@@ -581,6 +592,7 @@ instance (RealFrac a) => HasTaxableIncome (TaxReturnInfo y) a a where
 instance (Num a) => HasTaxWithheld (TaxReturnInfo y) a a where
   taxWithheld = to $ \info ->
     view (paymentSummariesIndividualNonBusiness . taxWithheld) info
+    <> view (paymentSummariesForeignEmployment . taxWithheld) info
     <> view (interest . taxWithheld) info
     <> view (ess . essTFNAmounts) info
 
@@ -595,15 +607,23 @@ assessTax tables info =
     taxable = view taxableIncome info
     due = getTax (individualTax tables) taxable
 
-    fringeBenefits = foldOf l info
+    fringeBenefits =
+      foldOf l'inb info
+      <> foldOf l'foreign info
       where
-        l =
+        l'inb =
           paymentSummariesIndividualNonBusiness . traverse
           . reportableFringeBenefits . traverse
           . to (\(ReportableFringeBenefits amount _) -> amount)
+        l'foreign =
+          paymentSummariesForeignEmployment . traverse
+          . reportableFringeBenefits . traverse
+          . to (\(ReportableFringeBenefits amount _) -> amount)
+
 
     reportableSuperContributions =
       foldOf (paymentSummariesIndividualNonBusiness . traverse . reportableEmployerSuperannuationContributions) info
+      <> foldOf (paymentSummariesForeignEmployment . traverse . reportableEmployerSuperannuationContributions) info
       <> view (deductions . personalSuperannuationContributions) info
 
     exemptForeignIncome =

@@ -66,6 +66,12 @@ module Data.Tax.ATO.PaymentSummary
   -- *** Exempt foreign employment income
   , exemptForeignEmploymentIncome
 
+  -- ** Foreign employment
+  , PaymentSummaryForeignEmployment
+  , newPaymentSummaryForeignEmployment
+  , GrossPaymentsTypeForeignEmployment(..)
+  , foreignTaxPaid
+
   -- ** Payer details
   , PayerDetails
   , newPayerDetails
@@ -254,6 +260,130 @@ exemptForeignEmploymentIncome = lens _inbForeign (\s b -> s { _inbForeign = b })
 
 allowances :: Lens' (PaymentSummaryIndividualNonBusiness a) [Allowance a]
 allowances = lens _inbAllowances (\s b -> s { _inbAllowances = b })
+
+
+-- | PAYG payment summary - foreign employment
+--
+-- Use 'newPaymentSummaryForeignEmployment' to construct this data
+-- type (all amounts initially zero).
+--
+-- To @set@ and @view@ the various fields, these lenses are available:
+--
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'payerDetails'                                  | Use 'newPayerDetails' to construct.     |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'totalTaxWithheld'                              | TOTAL TAX WITHHELD                      |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'grossPayments'                                 | GROSS PAYMENTS.  You __must__ include   |
+-- |                                                 | allowances.  Do not include 'lumpSumA'  |
+-- |                                                 | 'lumpSumD' or 'lumpSumE' amounts.       |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'grossPaymentsType'                             | Initial value 'GrossPaymentsTypeF'.     |
+-- |                                                 | @set@ to 'GrossPaymentsTypeJ' for income|
+-- |                                                 | earned from work conducted in the Joint |
+-- |                                                 | Petroleum Development Area (JPDA).      |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'foreignTaxPaid'                                |                                         |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'reportableEmployerSuperannuationContributions' | Reportable employer superannuation      |
+-- |                                                 | contributions (do not include           |
+-- |                                                 | compulsory super guarantee amounts)     |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'reportableFringeBenefits'                      | Fringe benefits amount for FBT year     |
+-- |                                                 | 1 April to 31 March, and employer       |
+-- |                                                 | FBT exemption status.  See also         |
+-- |                                                 | 'ReportableFringeBenefits'.             |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'lumpSumA'                                      | Lump sum A. Use 'lumpSumATypeR' or      |
+-- |                                                 | 'lumpSumATypeT' to construct.           |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'lumpSumD'                                      | Lump sum D.                             |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'lumpSumE'                                      | Lump sum E - payments in arrears.  This |
+-- |                                                 | amount is included in taxable income.   |
+-- |                                                 | The tax offset calculations are not yet |
+-- |                                                 | implemented.                            |
+-- +-------------------------------------------------+-----------------------------------------+
+--
+data PaymentSummaryForeignEmployment a = PaymentSummaryForeignEmployment
+  { _foreignPayer :: PayerDetails
+  , _foreignWithholding :: Money a
+  , _foreignGross :: Money a
+  , _foreignGrossPaymentsType :: GrossPaymentsTypeForeignEmployment
+  , _foreignForeignTaxPaid :: Money a
+  , _foreignRESC :: Money a
+  , _foreignFringeBenefits :: Maybe (ReportableFringeBenefits a)
+  , _foreignLumpSumA :: Maybe (LumpSumA a)
+  , _foreignLumpSumD :: Money a
+  , _foreignLumpSumE :: Money a
+  }
+
+-- | Construct a new payment summary.  All amounts are initially zero.
+newPaymentSummaryForeignEmployment
+  :: (Num a) => PayerDetails -> PaymentSummaryForeignEmployment a
+newPaymentSummaryForeignEmployment payer =
+  PaymentSummaryForeignEmployment payer
+    mempty    -- total tax withheld
+    mempty    -- gross payments
+    GrossPaymentsTypeF   -- gross payments type
+    mempty    -- foreign tax paid
+    mempty    -- reportable super contributions
+    Nothing   -- reportable fringe benefits
+    Nothing   -- lump sum a
+    mempty    -- lump sum d
+    mempty    -- lump sum e
+
+data GrossPaymentsTypeForeignEmployment
+  = GrossPaymentsTypeF
+  -- ^ foreign employment income
+  | GrossPaymentsTypeJ
+  -- ^ income earned from work conducted in the Joint Petroleum
+  -- Development Area (JPDA).
+  deriving (Eq, Ord)
+
+instance (RealFrac a) => HasTaxableIncome PaymentSummaryForeignEmployment a a where
+  taxableIncome = to $ \s ->
+    view grossPayments s
+    <> foldOf (lumpSumA . traverse . lumpSumAAmount) s
+    <> view lumpSumE s
+
+instance HasTaxWithheld PaymentSummaryForeignEmployment a a where
+  taxWithheld = totalTaxWithheld
+
+instance HasPayerDetails PaymentSummaryForeignEmployment where
+  payerDetails = lens _foreignPayer (\s b -> s { _foreignPayer = b })
+
+instance HasTotalTaxWithheld PaymentSummaryForeignEmployment where
+  totalTaxWithheld = lens _foreignWithholding (\s b -> s { _foreignWithholding = b })
+
+instance HasGrossPayments PaymentSummaryForeignEmployment where
+  grossPayments = lens _foreignGross (\s b -> s { _foreignGross = b })
+
+instance HasGrossPaymentsType PaymentSummaryForeignEmployment
+    GrossPaymentsTypeForeignEmployment where
+  grossPaymentsType = lens _foreignGrossPaymentsType (\s b -> s { _foreignGrossPaymentsType = b })
+
+foreignTaxPaid :: Lens' (PaymentSummaryForeignEmployment a) (Money a)
+foreignTaxPaid =
+  lens _foreignForeignTaxPaid (\s b -> s { _foreignForeignTaxPaid = b })
+
+instance HasReportableEmployerSuperannuationContributions PaymentSummaryForeignEmployment where
+  reportableEmployerSuperannuationContributions =
+    lens _foreignRESC (\s b -> s { _foreignRESC = b })
+
+instance HasReportableFringeBenefits PaymentSummaryForeignEmployment where
+  reportableFringeBenefits =
+    lens _foreignFringeBenefits (\s b -> s { _foreignFringeBenefits = b })
+
+instance HasLumpSumA PaymentSummaryForeignEmployment where
+  lumpSumA = lens _foreignLumpSumA (\s b -> s { _foreignLumpSumA = b })
+
+instance HasLumpSumD PaymentSummaryForeignEmployment where
+  lumpSumD = lens _foreignLumpSumD (\s b -> s { _foreignLumpSumD = b })
+
+instance HasLumpSumE PaymentSummaryForeignEmployment where
+  lumpSumE = lens _foreignLumpSumE (\s b -> s { _foreignLumpSumE = b })
+
 
 
 -- | Objects which have a /GROSS PAYMENTS/ field.

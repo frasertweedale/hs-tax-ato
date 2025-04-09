@@ -22,6 +22,9 @@
 
 - Implemented **non-super lump sum A, B, D and E** payments.
 
+- Implemented additional payment summary types:
+  - Foreign Employment
+
 - New module `Data.Tax.ATO.Depreciation` provides types and
   functions for calculating decline in value (for deductions).
   Use the `DepreciatingAsset` data type to define depreciating
