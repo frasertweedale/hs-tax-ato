@@ -623,6 +623,7 @@ data PayerDetails = PayerDetails
   , _payerBranch :: Maybe Int
   , _payerName :: String
   }
+  deriving (Eq, Ord)
 
 -- | __Deprecated__ instance that interprets string as ABN and
 -- sets payer name to the empty string.

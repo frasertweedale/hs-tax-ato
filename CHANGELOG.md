@@ -43,6 +43,11 @@
   Remaining gaps include foreign withholding credits and separate
   treatment of collectables.
 
+- Multiple ESS statements can now be added to a tax return.  Also,
+  the `essEmployeeDetails` field has been added, and
+  `newESSStatement` was updated to take a `PayerDetails`.  This is a
+  breaking change.  ([#16])
+
 - Added the `Data.Tax.ATO.ABN` and `Data.Tax.ATO.TFN` modules, which
   have more representative data types, conversion functions, and
   proper validation.  `IsString` instances are provided for
@@ -75,6 +80,7 @@
 - Fix FY2024 private health insurance rebate tier thresholds.
 
 [#8]: https://github.com/frasertweedale/hs-tax-ato/issues/8
+[#16]: https://github.com/frasertweedale/hs-tax-ato/issues/16
 
 
 ## Version 2024.1

@@ -71,6 +71,7 @@ module Data.Tax.ATO
   , ESSStatement
   , newESSStatement
   , ess
+  , essEmployerDetails
   , essTaxedUpfrontReduction
   , essTaxedUpfrontNoReduction
   , essDeferral
@@ -357,7 +358,7 @@ data TaxReturnInfo y a = TaxReturnInfo
   , _paymentSummariesWithholdingWhereABNNotQuoted :: [PaymentSummaryWithholdingWhereABNNotQuoted a]
   , _interest :: GrossAndWithheld a
   , _dividends :: [Dividend a]
-  , _ess :: ESSStatement a
+  , _ess :: [ESSStatement a]
   , _foreignIncome :: Money a
   , _cgtEvents :: [CGTEvent a]
   , _deductions :: Deductions a
@@ -455,7 +456,7 @@ interest = lens _interest (\s b -> s { _interest = b })
 dividends :: Lens' (TaxReturnInfo y a) [Dividend a]
 dividends = lens _dividends (\s b -> s { _dividends = b })
 
-ess :: Lens' (TaxReturnInfo y a) (ESSStatement a)
+ess :: Lens' (TaxReturnInfo y a) [ESSStatement a]
 ess = lens _ess (\s b -> s { _ess = b })
 
 foreignIncome :: Lens' (TaxReturnInfo y a) (Money a)
@@ -619,7 +620,7 @@ instance (Num a) => HasTaxWithheld (TaxReturnInfo y) a a where
     <> view (paymentSummariesBusinessAndPersonalServicesIncome . taxWithheld) info
     <> view (paymentSummariesWithholdingWhereABNNotQuoted . taxWithheld) info
     <> view (interest . taxWithheld) info
-    <> view (ess . essTFNAmounts) info
+    <> view (ess . taxWithheld) info
 
 -- | Assess a tax return, given tax tables and tax return info.
 assessTax
@@ -1088,6 +1089,8 @@ instance HasTaxWithheld GrossAndWithheld a a where
 -- The following lenses are available:
 --
 -- +------------------------------+--------------------------------------------+
+-- | 'essEmployerDetails'         | 'PayerDetails' for employer.               |
+-- +------------------------------+--------------------------------------------+
 -- | 'essTaxedUpfrontReduction'   | __D__ Discount from taxed up front         |
 -- |                              | schemes—eligible for reduction             |
 -- +------------------------------+--------------------------------------------+
@@ -1106,18 +1109,23 @@ instance HasTaxWithheld GrossAndWithheld a a where
 -- +------------------------------+--------------------------------------------+
 --
 data ESSStatement a = ESSStatement
-  { _taxedUpfrontReduction :: Money a
+  { _essPayer :: PayerDetails
+  , _taxedUpfrontReduction :: Money a
   , _taxedUpfrontNoReduction :: Money a
   , _deferral :: Money a
   , _pre2009 :: Money a
   , _tfnAmounts :: Money a
   , _foreignSourceDiscounts :: Money a
   }
-  deriving (Eq)
+  deriving (Eq, Ord)
 
 -- | Construct an 'ESSStatement' with all amounts at /zero/.
-newESSStatement :: Num a => ESSStatement a
-newESSStatement = ESSStatement mempty mempty mempty mempty mempty mempty
+newESSStatement :: (Num a) => PayerDetails -> ESSStatement a
+newESSStatement payer = ESSStatement payer mempty mempty mempty mempty mempty mempty
+
+-- | Employer details
+essEmployerDetails :: Lens' (ESSStatement a) PayerDetails
+essEmployerDetails = lens _essPayer (\s b -> s { _essPayer = b })
 
 -- | Discount from taxed up front schemes—eligible for reduction.
 -- Item __D__ in /Employee share schemes/ section.
@@ -1162,10 +1170,5 @@ instance (Num a) => HasTaxableIncome ESSStatement a a where
     <> view essDeferral s
     <> view essPre2009 s
 
-instance (Num a) => Semigroup (ESSStatement a) where
-  ESSStatement a b c d e f <> ESSStatement a' b' c' d' e' f' =
-    ESSStatement (a <> a') (b <> b') (c <> c') (d <> d') (e <> e') (f <> f')
-
-instance (Num a) => Monoid (ESSStatement a) where
-  mempty = newESSStatement
-  mappend = (<>)
+instance HasTaxWithheld ESSStatement a a where
+  taxWithheld = essTFNAmounts

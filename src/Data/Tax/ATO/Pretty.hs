@@ -32,7 +32,7 @@ module Data.Tax.ATO.Pretty
 import Data.Function (on)
 import Data.List (groupBy, sortOn)
 
-import Control.Lens (ALens', cloneLens, view, views)
+import Control.Lens (ALens', cloneLens, foldOf, view, views)
 import qualified Text.PrettyPrint as P
 
 import Data.Tax.ATO
@@ -118,18 +118,27 @@ summariseDividends =
       , view taxableIncome l
       )
 
-summariseESS :: ESSStatement Rational -> P.Doc
-summariseESS s
-  | s == newESSStatement = P.empty
-  | otherwise =
-      "  12  Employee share schemes"
-      P.$+$ P.vcat
-        [ twoCol ("    D Discount from upfront schemes - eligible for reduction", view essTaxedUpfrontReduction s)
-        , twoCol ("    E Discount from upfront schemes - ineligible for reduction", view essTaxedUpfrontNoReduction s)
-        , twoCol ("    F Discount from deferral schemes", view essDeferral s)
-        , threeColLeft ("    C TFN amounts withheld from discounts", view essTFNAmounts s)
-        , twoCol ("    A Foreign source discounts", view essForeignSourceDiscounts s)
-        ]
+summariseESS :: [ESSStatement Rational] -> P.Doc
+summariseESS [] = P.empty
+summariseESS l =
+  "  12  Employee share schemes"
+  P.$+$ P.vcat
+    [ twoCol
+        ( "    D Discount from upfront schemes - eligible for reduction"
+        , foldOf (traverse . essTaxedUpfrontReduction) l )
+    , twoCol
+        ( "    E Discount from upfront schemes - ineligible for reduction"
+        , foldOf (traverse . essTaxedUpfrontNoReduction) l )
+    , twoCol
+        ( "    F Discount from deferral schemes"
+        , foldOf (traverse . essDeferral) l )
+    , threeColLeft
+        ( "    C TFN amounts withheld from discounts"
+        , foldOf (traverse . essTFNAmounts) l )
+    , twoCol
+        ( "    A Foreign source discounts"
+        , foldOf (traverse . essForeignSourceDiscounts) l )
+    ]
 
 summariseCGT :: TaxReturnInfo y Rational -> P.Doc
 summariseCGT info
