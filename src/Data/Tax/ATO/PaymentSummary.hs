@@ -63,6 +63,14 @@ module Data.Tax.ATO.PaymentSummary
   -- *** Lump sum E
   , HasLumpSumE(..)
 
+  -- ** Payer details
+  , PayerDetails
+  , newPayerDetails
+  , payerABN
+  , payerBranchNumber
+  , payerName
+  , HasPayerDetails(..)
+
   -- ** Classes and helpers
   , HasGrossPayments(..)
   , HasGrossPaymentsType(..)
@@ -71,6 +79,8 @@ module Data.Tax.ATO.PaymentSummary
   , pattern PaymentSummary
   )
   where
+
+import Data.String (IsString(..))
 
 import Control.Lens
 
@@ -85,12 +95,12 @@ import Data.Tax.ATO.Rounding
 -- constructor and accessors instead.
 --
 pattern PaymentSummary
-  :: (Num a) => ABN -> Money a -> Money a -> Money a -> PaymentSummaryIndividualNonBusiness a
-pattern PaymentSummary abn gross tax resc <-
-  PaymentSummaryIndividualNonBusiness abn tax gross _type resc _fb
+  :: (Num a) => PayerDetails -> Money a -> Money a -> Money a -> PaymentSummaryIndividualNonBusiness a
+pattern PaymentSummary payer gross tax resc <-
+  PaymentSummaryIndividualNonBusiness payer tax gross _type resc _fb
     _allow _lumpA _lumpB _lumpD _lumpE
   where
-  PaymentSummary abn gross tax resc = newPaymentSummaryIndividualNonBusiness abn
+  PaymentSummary payer gross tax resc = newPaymentSummaryIndividualNonBusiness payer
     & set grossPayments gross
     & set totalTaxWithheld tax
     & set reportableEmployerSuperannuationContributions resc
@@ -104,6 +114,8 @@ pattern PaymentSummary abn gross tax resc <-
 --
 -- To @set@ and @view@ the various fields, these lenses are available:
 --
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'payerDetails'                                  | Use 'newPayerDetails' to construct.     |
 -- +-------------------------------------------------+-----------------------------------------+
 -- | 'totalTaxWithheld'                              | TOTAL TAX WITHHELD                      |
 -- +-------------------------------------------------+-----------------------------------------+
@@ -140,7 +152,7 @@ pattern PaymentSummary abn gross tax resc <-
 -- +-------------------------------------------------+-----------------------------------------+
 --
 data PaymentSummaryIndividualNonBusiness a = PaymentSummaryIndividualNonBusiness
-  { _inbABN :: ABN
+  { _inbPayer :: PayerDetails
   , _inbWithholding :: Money a
   , _inbGross :: Money a
   , _inbGrossPaymentsType :: Maybe GrossPaymentsTypeIndividualNonBusiness
@@ -155,9 +167,9 @@ data PaymentSummaryIndividualNonBusiness a = PaymentSummaryIndividualNonBusiness
 
 -- | Construct a new payment summary.  All amounts are initially zero.
 newPaymentSummaryIndividualNonBusiness
-  :: (Num a) => ABN -> PaymentSummaryIndividualNonBusiness a
-newPaymentSummaryIndividualNonBusiness abn =
-  PaymentSummaryIndividualNonBusiness abn
+  :: (Num a) => PayerDetails -> PaymentSummaryIndividualNonBusiness a
+newPaymentSummaryIndividualNonBusiness payer =
+  PaymentSummaryIndividualNonBusiness payer
     mempty    -- total tax withheld
     mempty    -- gross payments
     Nothing   -- gross payments type
@@ -194,6 +206,9 @@ instance (RealFrac a) => HasTaxableIncome PaymentSummaryIndividualNonBusiness a 
 
 instance HasTaxWithheld PaymentSummaryIndividualNonBusiness a a where
   taxWithheld = totalTaxWithheld
+
+instance HasPayerDetails PaymentSummaryIndividualNonBusiness where
+  payerDetails = lens _inbPayer (\s b -> s { _inbPayer = b })
 
 instance HasTotalTaxWithheld PaymentSummaryIndividualNonBusiness where
   totalTaxWithheld = lens _inbWithholding (\s b -> s { _inbWithholding = b })
@@ -342,3 +357,38 @@ class HasLumpSumD s where
 
 class HasLumpSumE s where
   lumpSumE :: Lens' (s a) (Money a)
+
+
+-- | Payer details.  Use 'newPayerDetails' to construct.
+-- Use 'payerABN', 'payerBranchNumber' and 'payerName' lenses to view or
+-- set the fields.
+--
+-- Use the 'payerDetails' classy optic to access the payer details field
+-- in payment summary data types.
+--
+data PayerDetails = PayerDetails
+  { _payerABN :: ABN
+  , _payerBranch :: Maybe Int
+  , _payerName :: String
+  }
+
+-- | __Deprecated__ instance that interprets string as ABN and
+-- sets payer name to the empty string.
+--
+instance IsString PayerDetails where
+  fromString s = PayerDetails (fromString s) Nothing ""
+
+newPayerDetails :: ABN -> Maybe Int -> String -> PayerDetails
+newPayerDetails = PayerDetails
+
+payerABN :: Lens' PayerDetails ABN
+payerABN = lens _payerABN (\s b -> s { _payerABN = b })
+
+payerBranchNumber :: Lens' PayerDetails (Maybe Int)
+payerBranchNumber = lens _payerBranch (\s b -> s { _payerBranch = b })
+
+payerName :: Lens' PayerDetails String
+payerName = lens _payerName (\s b -> s { _payerName = b })
+
+class HasPayerDetails s where
+  payerDetails :: Lens' (s a) PayerDetails
