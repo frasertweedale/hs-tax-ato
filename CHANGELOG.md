@@ -24,6 +24,7 @@
 
 - Implemented additional payment summary types:
   - Foreign Employment
+  - Business and personal services income
 
 - New module `Data.Tax.ATO.Depreciation` provides types and
   functions for calculating decline in value (for deductions).

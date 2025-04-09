@@ -72,6 +72,10 @@ module Data.Tax.ATO.PaymentSummary
   , GrossPaymentsTypeForeignEmployment(..)
   , foreignTaxPaid
 
+  -- ** Business and personal services income
+  , PaymentSummaryBusinessAndPersonalServicesIncome
+  , newPaymentSummaryBusinessAndPersonalServicesIncome
+
   -- ** Payer details
   , PayerDetails
   , newPayerDetails
@@ -384,6 +388,61 @@ instance HasLumpSumD PaymentSummaryForeignEmployment where
 instance HasLumpSumE PaymentSummaryForeignEmployment where
   lumpSumE = lens _foreignLumpSumE (\s b -> s { _foreignLumpSumE = b })
 
+
+-- | PAYG payment summary - business and personal services income
+--
+-- Use 'newPaymentSummaryBusinessAndPersonalServicesIncome' to construct this data
+-- type (all amounts initially zero).
+--
+-- To @set@ and @view@ the various fields, these lenses are available:
+--
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'payerDetails'                                  | Use 'newPayerDetails' to construct.     |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'totalTaxWithheld'                              | TOTAL TAX WITHHELD                      |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'grossPayments'                                 | Gross payments or gross attributed      |
+-- |                                                 | income.                                 |
+-- +-------------------------------------------------+-----------------------------------------+
+-- | 'reportableEmployerSuperannuationContributions' | Reportable employer superannuation      |
+-- |                                                 | contributions (do not include           |
+-- |                                                 | compulsory super guarantee amounts)     |
+-- +-------------------------------------------------+-----------------------------------------+
+--
+data PaymentSummaryBusinessAndPersonalServicesIncome a = PaymentSummaryBusinessAndPersonalServicesIncome
+  { _bpsiPayer :: PayerDetails
+  , _bpsiWithholding :: Money a
+  , _bpsiGross :: Money a
+  , _bpsiRESC :: Money a
+  }
+
+-- | Construct a new payment summary.  All amounts are initially zero.
+newPaymentSummaryBusinessAndPersonalServicesIncome
+  :: (Num a) => PayerDetails -> PaymentSummaryBusinessAndPersonalServicesIncome a
+newPaymentSummaryBusinessAndPersonalServicesIncome payer =
+  PaymentSummaryBusinessAndPersonalServicesIncome payer
+    mempty    -- total tax withheld
+    mempty    -- gross payments
+    mempty    -- reportable super contributions
+
+instance HasTaxableIncome PaymentSummaryBusinessAndPersonalServicesIncome a a where
+  taxableIncome = grossPayments
+
+instance HasTaxWithheld PaymentSummaryBusinessAndPersonalServicesIncome a a where
+  taxWithheld = totalTaxWithheld
+
+instance HasPayerDetails PaymentSummaryBusinessAndPersonalServicesIncome where
+  payerDetails = lens _bpsiPayer (\s b -> s { _bpsiPayer = b })
+
+instance HasTotalTaxWithheld PaymentSummaryBusinessAndPersonalServicesIncome where
+  totalTaxWithheld = lens _bpsiWithholding (\s b -> s { _bpsiWithholding = b })
+
+instance HasGrossPayments PaymentSummaryBusinessAndPersonalServicesIncome where
+  grossPayments = lens _bpsiGross (\s b -> s { _bpsiGross = b })
+
+instance HasReportableEmployerSuperannuationContributions PaymentSummaryBusinessAndPersonalServicesIncome where
+  reportableEmployerSuperannuationContributions =
+    lens _bpsiRESC (\s b -> s { _bpsiRESC = b })
 
 
 -- | Objects which have a /GROSS PAYMENTS/ field.

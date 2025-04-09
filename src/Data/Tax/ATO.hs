@@ -48,6 +48,7 @@ module Data.Tax.ATO
   -- *** PAYG Payment Summaries
   , paymentSummariesIndividualNonBusiness
   , paymentSummariesForeignEmployment
+  , paymentSummariesBusinessAndPersonalServicesIncome
   , paymentSummaries
 
   -- *** Interest
@@ -316,6 +317,10 @@ dependentChildren =
 -- | 'paymentSummariesForeignEmployment'                  | PAYG payment summaries -         |
 -- |                                                      | foreign employment               |
 -- +------------------------------------------------------+----------------------------------+
+-- | 'paymentSummariesBusinessAndPersonalServicesIncome'  | PAYG payment summaries -         |
+-- |                                                      | business and personal services   |
+-- |                                                      | income                           |
+-- +------------------------------------------------------+----------------------------------+
 -- | 'interest'                                           | Interest income and tax withheld |
 -- +------------------------------------------------------+----------------------------------+
 -- | 'dividends'                                          | Dividend data                    |
@@ -344,6 +349,7 @@ data TaxReturnInfo y a = TaxReturnInfo
   , _sfssBalance :: Money a
   , _paymentSummariesIndividualNonBusiness :: [PaymentSummaryIndividualNonBusiness a]
   , _paymentSummariesForeignEmployment :: [PaymentSummaryForeignEmployment a]
+  , _paymentSummariesBusinessAndPersonalServicesIncome :: [PaymentSummaryBusinessAndPersonalServicesIncome a]
   , _interest :: GrossAndWithheld a
   , _dividends :: [Dividend a]
   , _ess :: ESSStatement a
@@ -372,8 +378,9 @@ newTaxReturnInfo = TaxReturnInfo
   daysAll  -- MLS exemption
   mempty -- HELP
   mempty -- SFSS
-  mempty -- payment summaries - individual non-business
-  mempty -- payment summaries - foreign employment
+  [] -- payment summaries - individual non-business
+  [] -- payment summaries - foreign employment
+  [] -- payment summaries - business and personal services income
   mempty -- interest
   mempty -- dividends
   mempty -- ESS
@@ -422,6 +429,10 @@ paymentSummariesIndividualNonBusiness =
 paymentSummariesForeignEmployment :: Lens' (TaxReturnInfo y a) [PaymentSummaryForeignEmployment a]
 paymentSummariesForeignEmployment =
   lens _paymentSummariesForeignEmployment (\s b -> s { _paymentSummariesForeignEmployment = b })
+
+paymentSummariesBusinessAndPersonalServicesIncome :: Lens' (TaxReturnInfo y a) [PaymentSummaryBusinessAndPersonalServicesIncome a]
+paymentSummariesBusinessAndPersonalServicesIncome =
+  lens _paymentSummariesBusinessAndPersonalServicesIncome (\s b -> s { _paymentSummariesBusinessAndPersonalServicesIncome = b })
 
 -- | Deprecated synonym for 'paymentSummariesIndividualNonBusiness'
 paymentSummaries :: Lens' (TaxReturnInfo y a) [PaymentSummaryIndividualNonBusiness a]
@@ -575,6 +586,7 @@ instance (RealFrac a) => HasTaxableIncome (TaxReturnInfo y) a a where
       gross = foldMap wholeDollars
         [ view (paymentSummariesIndividualNonBusiness . taxableIncome) info
         , view (paymentSummariesForeignEmployment . taxableIncome) info
+        , view (paymentSummariesBusinessAndPersonalServicesIncome . taxableIncome) info
         , view (interest . taxableIncome) info
         , view (dividends . taxableIncome) info
         , view (ess . taxableIncome) info
@@ -593,6 +605,7 @@ instance (Num a) => HasTaxWithheld (TaxReturnInfo y) a a where
   taxWithheld = to $ \info ->
     view (paymentSummariesIndividualNonBusiness . taxWithheld) info
     <> view (paymentSummariesForeignEmployment . taxWithheld) info
+    <> view (paymentSummariesBusinessAndPersonalServicesIncome . taxWithheld) info
     <> view (interest . taxWithheld) info
     <> view (ess . essTFNAmounts) info
 
@@ -624,6 +637,7 @@ assessTax tables info =
     reportableSuperContributions =
       foldOf (paymentSummariesIndividualNonBusiness . traverse . reportableEmployerSuperannuationContributions) info
       <> foldOf (paymentSummariesForeignEmployment . traverse . reportableEmployerSuperannuationContributions) info
+      <> foldOf (paymentSummariesBusinessAndPersonalServicesIncome . traverse . reportableEmployerSuperannuationContributions) info
       <> view (deductions . personalSuperannuationContributions) info
 
     exemptForeignIncome =
