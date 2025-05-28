@@ -622,6 +622,27 @@ instance (Num a) => HasTaxWithheld (TaxReturnInfo y) a a where
     <> view (interest . taxWithheld) info
     <> view (ess . taxWithheld) info
 
+fringeBenefits :: (Num a) => TaxReturnInfo y a -> Money a
+fringeBenefits info =
+  foldOf l'inb info
+  <> foldOf l'foreign info
+  where
+    l'inb =
+      paymentSummariesIndividualNonBusiness . traverse
+      . reportableFringeBenefits . traverse
+      . to (\(ReportableFringeBenefits amount _) -> amount)
+    l'foreign =
+      paymentSummariesForeignEmployment . traverse
+      . reportableFringeBenefits . traverse
+      . to (\(ReportableFringeBenefits amount _) -> amount)
+
+reportableSuperContributions :: (Num a) => TaxReturnInfo y a -> Money a
+reportableSuperContributions info =
+  foldOf (paymentSummariesIndividualNonBusiness . traverse . reportableEmployerSuperannuationContributions) info
+  <> foldOf (paymentSummariesForeignEmployment . traverse . reportableEmployerSuperannuationContributions) info
+  <> foldOf (paymentSummariesBusinessAndPersonalServicesIncome . traverse . reportableEmployerSuperannuationContributions) info
+  <> view (deductions . personalSuperannuationContributions) info
+
 -- | Assess a tax return, given tax tables and tax return info.
 assessTax
   :: (FinancialYear y, RealFrac a)
@@ -633,35 +654,15 @@ assessTax tables info =
     taxable = view taxableIncome info
     due = getTax (individualTax tables) taxable
 
-    fringeBenefits =
-      foldOf l'inb info
-      <> foldOf l'foreign info
-      where
-        l'inb =
-          paymentSummariesIndividualNonBusiness . traverse
-          . reportableFringeBenefits . traverse
-          . to (\(ReportableFringeBenefits amount _) -> amount)
-        l'foreign =
-          paymentSummariesForeignEmployment . traverse
-          . reportableFringeBenefits . traverse
-          . to (\(ReportableFringeBenefits amount _) -> amount)
-
-
-    reportableSuperContributions =
-      foldOf (paymentSummariesIndividualNonBusiness . traverse . reportableEmployerSuperannuationContributions) info
-      <> foldOf (paymentSummariesForeignEmployment . traverse . reportableEmployerSuperannuationContributions) info
-      <> foldOf (paymentSummariesBusinessAndPersonalServicesIncome . traverse . reportableEmployerSuperannuationContributions) info
-      <> view (deductions . personalSuperannuationContributions) info
-
     exemptForeignIncome =
       foldOf (paymentSummariesIndividualNonBusiness . traverse . exemptForeignEmploymentIncome) info
 
     repaymentIncome =
       taxable
-      <> fringeBenefits
+      <> fringeBenefits info
       -- TODO net financial investment losses
       -- TODO net rental property losses
-      <> reportableSuperContributions
+      <> reportableSuperContributions info
       <> exemptForeignIncome
 
     studyRepayment = getTax (studyAndTrainingLoanRepaymentTax tables info) repaymentIncome
@@ -674,10 +675,10 @@ assessTax tables info =
 
     surchargeIncome =
       taxable
-      <> fringeBenefits
+      <> fringeBenefits info
       -- TODO net financial investment losses
       -- TODO net rental property losses
-      <> reportableSuperContributions
+      <> reportableSuperContributions info
       -- TODO spouse's share of net income of a trust on which the trustee
       --      must pay tax, if not included in taxable income
       <> ( if taxable > mempty then exemptForeignIncome else mempty )
