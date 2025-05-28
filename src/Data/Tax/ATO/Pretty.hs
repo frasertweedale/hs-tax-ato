@@ -27,6 +27,7 @@ Monetary values are rounded to the nearest whole cent (half-up).
 module Data.Tax.ATO.Pretty
   ( summariseTaxReturnInfo
   , summariseAssessment
+  , formatMoney
   ) where
 
 import Data.Function (on)
