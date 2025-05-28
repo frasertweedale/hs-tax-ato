@@ -148,6 +148,9 @@ module Data.Tax.ATO
   , taxCGTAssessment
   , privateHealthInsuranceRebateAdjustment
 
+  -- *** Division 293
+  , division293Income
+
   -- * Corporate tax
   , corporateTax
 
@@ -642,6 +645,17 @@ reportableSuperContributions info =
   <> foldOf (paymentSummariesForeignEmployment . traverse . reportableEmployerSuperannuationContributions) info
   <> foldOf (paymentSummariesBusinessAndPersonalServicesIncome . traverse . reportableEmployerSuperannuationContributions) info
   <> view (deductions . personalSuperannuationContributions) info
+
+-- | Calculate Division 293 income
+division293Income :: (RealFrac a) => TaxReturnInfo y a -> Money a
+division293Income info =
+  view taxableIncome info
+  <> fringeBenefits info
+  -- TODO net financial investment loss
+  -- TODO net rental property loss
+  -- TODO net amount on which family trust distribution has been paid
+  -- TODO super lump sum taxed elements with zero tax rate
+  -- TODO assessable FHSS released amount
 
 -- | Assess a tax return, given tax tables and tax return info.
 assessTax

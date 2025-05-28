@@ -48,6 +48,11 @@
   `newESSStatement` was updated to take a `PayerDetails`.  This is a
   breaking change.  ([#16])
 
+- Added `division293Income` which calculates the income component of
+  Division 293 tax calculations.  Some elements are not included
+  because the relevant feature is not yet implemented (e.g. rental
+  losses or FHSS releases).  ([#12])
+
 - Added the `Data.Tax.ATO.ABN` and `Data.Tax.ATO.TFN` modules, which
   have more representative data types, conversion functions, and
   proper validation.  `IsString` instances are provided for
@@ -80,6 +85,7 @@
 - Fix FY2024 private health insurance rebate tier thresholds.
 
 [#8]: https://github.com/frasertweedale/hs-tax-ato/issues/8
+[#12]: https://github.com/frasertweedale/hs-tax-ato/issues/12
 [#16]: https://github.com/frasertweedale/hs-tax-ato/issues/16
 
 
