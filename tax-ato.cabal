@@ -82,6 +82,6 @@ library
     Data.Tax.ATO.FY.FY2025
   build-depends:
     , lens >= 4.12 && < 6
-    , time >= 1.11 && < 1.13
+    , time >= 1.11 && < 1.15
     , tax >= 0.2 && < 0.3
     , pretty >= 1.1.3.6 && < 2
