@@ -151,6 +151,9 @@ module Data.Tax.ATO
   -- *** Division 293
   , division293Income
 
+  -- *** PAYG instalments
+  , paygInstalmentIncome
+
   -- * Corporate tax
   , corporateTax
 
@@ -656,6 +659,21 @@ division293Income info =
   -- TODO net amount on which family trust distribution has been paid
   -- TODO super lump sum taxed elements with zero tax rate
   -- TODO assessable FHSS released amount
+
+paygInstalmentIncome :: (RealFrac a) => TaxReturnInfo y a -> Money a
+paygInstalmentIncome info =
+  -- TODO gross rent
+  view (dividends . taxableIncome) info
+  -- TODO royalties?
+  -- TODO foreign pensions assessable in Australia
+  -- TODO share of income from partnerships and trusts
+  <> view foreignIncome info
+  <> view (interest . taxableIncome) info
+  -- TODO business income (incl PSI etc)
+  <> view (paymentSummariesWithholdingWhereABNNotQuoted . taxableIncome) info
+  -- TODO gross income where tax withheld due to not provide TFN
+  -- TODO withdrawal from farm management deposits
+  -- TODO fuel tax credits
 
 -- | Assess a tax return, given tax tables and tax return info.
 assessTax

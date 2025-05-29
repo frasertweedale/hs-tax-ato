@@ -53,6 +53,11 @@
   because the relevant feature is not yet implemented (e.g. rental
   losses or FHSS releases).  ([#12])
 
+- Added `paygInstalmentIncome`, which calculates the PAYG instalment
+  income.  Some elements are not included because the relevant
+  features are not yet implement (e.g. rent, partnership and trust
+  income, PSI).
+
 - Added the `Data.Tax.ATO.ABN` and `Data.Tax.ATO.TFN` modules, which
   have more representative data types, conversion functions, and
   proper validation.  `IsString` instances are provided for
