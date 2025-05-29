@@ -14,7 +14,7 @@ maintainer:          frase@frase.id.au
 copyright:           Copyright (C) 2018-2023 Fraser Tweedale
 category:            Finance
 build-type:          Simple
-tested-with:         GHC ==9.10.1 || ==9.2.8 || ==9.4.8 || ==9.6.6 || ==9.8.2
+tested-with:         GHC ==9.2.8 || ==9.4.8 || ==9.6.7 || ==9.8.4 || ==9.10.2 || ==9.12.2
 extra-source-files:
   .hlint.yaml
 extra-doc-files:
