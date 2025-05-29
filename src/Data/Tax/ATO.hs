@@ -1,5 +1,3 @@
-{-# LANGUAGE PolyKinds #-}
-
 -- This file is part of hs-tax-ato
 -- Copyright (C) 2018-2025  Fraser Tweedale
 --
@@ -29,9 +27,6 @@ previous years, Medicare levy exemptions, adjustments,
 and variations based on family income and dependents.
 
 -}
-
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Data.Tax.ATO
   (

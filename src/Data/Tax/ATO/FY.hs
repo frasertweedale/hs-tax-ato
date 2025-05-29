@@ -20,10 +20,7 @@ Types and functions related to financial years.
 
 -}
 
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Data.Tax.ATO.FY
   ( Days

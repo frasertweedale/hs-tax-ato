@@ -27,9 +27,6 @@ The main function you need is 'assessCGTEvents'.
 
 -}
 
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-
 module Data.Tax.ATO.CGT
   (
   -- * CGT events

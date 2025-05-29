@@ -20,9 +20,6 @@ Common taxes and helpers.
 
 -}
 
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds #-}
 
 module Data.Tax.ATO.Common
   (
