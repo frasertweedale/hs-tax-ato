@@ -30,8 +30,7 @@ module Data.Tax.ATO.Pretty
   , formatMoney
   ) where
 
-import Data.Function (on)
-import Data.List (groupBy, sortOn)
+import Data.List.NonEmpty as NE (NonEmpty, groupAllWith, head)
 
 import Control.Lens (ALens', cloneLens, foldOf, view, views)
 import qualified Text.PrettyPrint as P
@@ -109,12 +108,11 @@ summariseTaxReturnInfo info =
 summariseDividends :: [Dividend Rational] -> P.Doc
 summariseDividends =
   vcatWith (threeCol . prep)
-  . groupBy ((==) `on` dividendSource)
-  . sortOn dividendSource
+  . groupAllWith dividendSource
   where
-    prep :: [Dividend Rational] -> (P.Doc, Money Rational, Money Rational)
+    prep :: NonEmpty (Dividend Rational) -> (P.Doc, Money Rational, Money Rational)
     prep l =
-      ( P.text ("        " <> dividendSource (head l))
+      ( P.text ("        " <> dividendSource (NE.head l))
       , view taxWithheld l
       , view taxableIncome l
       )
