@@ -17,11 +17,17 @@
 {-# LANGUAGE DataKinds #-}
 
 -- | Tax tables for 2016–17 financial year.
-module Data.Tax.ATO.FY.FY2017 (tables, individualIncomeTax) where
+module Data.Tax.ATO.FY.FY2017 (FY, fyProxy, tables, individualIncomeTax) where
+
+import Data.Proxy
 
 import Data.Tax
 import Data.Tax.ATO.Common
 import Data.Tax.ATO.PrivateHealthInsuranceRebate
+
+type FY = 2017
+fyProxy :: Proxy FY
+fyProxy = Proxy
 
 -- | In FY2017 the 37% threshold was raised from $80,000 to $87,000
 --

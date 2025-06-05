@@ -20,6 +20,9 @@ Common taxes and helpers.
 
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Data.Tax.ATO.Common
   (
@@ -41,6 +44,10 @@ module Data.Tax.ATO.Common
   , lamito
   , corporateTax
 
+  -- * Deduction rates that vary by financial year
+  , applyCentsPerKilometreMethod
+  , HasCentsPerKilometreMethod
+
   -- * Convenience functions
   , thresholds'
   , marginal'
@@ -48,9 +55,12 @@ module Data.Tax.ATO.Common
 
 import Control.Lens (Getter, review, to, view)
 import Data.Bifunctor (first)
+import Data.Proxy
+import GHC.TypeLits
 
 import Data.Tax
 import Data.Tax.ATO.PrivateHealthInsuranceRebate
+import Data.Tax.ATO.FY
 
 -- | A set of tax tables for a particular financial year
 data TaxTables y a = TaxTables
@@ -160,3 +170,34 @@ class HasTaxWithheld a b c where
 instance (Foldable t, HasTaxWithheld x a a, Num a)
             => HasTaxWithheld t (x a) a where
   taxWithheld = to (foldMap (view taxWithheld))
+
+
+-- | See 'applyCentsPerKilometreMethod'.
+class HasCentsPerKilometreMethod y where
+  centsPerKilometre :: Num a => a
+
+instance (2016 <= y, y <= 2025, FinancialYear y) => HasCentsPerKilometreMethod y where
+  centsPerKilometre = case fromProxy (Proxy @y) of
+    y | y == 2025           -> 88
+      | y == 2024           -> 85
+      | y == 2023           -> 78
+      | y > 2020, y <= 2022 -> 72
+      | y > 2018, y <= 2020 -> 68
+      | y > 2015, y <= 2018 -> 66
+      | otherwise           ->  0  -- can't happen
+
+-- | Apply the single-rate cents per kilometre method (in use since
+-- the 2015–16 FY).  Clamped (by law) at 5000 kms.  Use
+-- @TypeApplications@ to specify the financial year, e.g.
+--
+-- @
+-- import Data.Tax.ATO.FY.2025 (FY)
+--
+-- y = applyCentsPerKilometreMethod \@2025 1111  -- using type literal
+-- x = applyCentsPerKilometreMethod \@FY   1111  -- same thing, using type synonym
+-- @
+--
+applyCentsPerKilometreMethod
+  :: forall y a. (HasCentsPerKilometreMethod y, Fractional a, Ord a)
+  => a -> Money a
+applyCentsPerKilometreMethod kms = Money $ centsPerKilometre @y * min kms 5000 / 100

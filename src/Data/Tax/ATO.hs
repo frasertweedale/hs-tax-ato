@@ -121,6 +121,10 @@ module Data.Tax.ATO
   , otherDeductions
   , foreignIncomeDeductions
 
+  -- *** Deduction methods
+  , HasCentsPerKilometreMethod
+  , applyCentsPerKilometreMethod
+
   -- ** Tax offsets
   , Offsets
   , offsets
@@ -194,7 +198,7 @@ import "Data.Tax.ATO.CGT"
 import "Data.Tax.ATO.Pretty"
 
 -- Import the tables for the financial year ending 30 June 2024
-import qualified "Data.Tax.ATO.FY.FY2024" as FY
+import "Data.Tax.ATO.FY.FY2025"
 
 -- Convenience function for parsing a Data.Time.Day
 day :: String -> Day
@@ -202,12 +206,12 @@ day = parseTimeOrError False defaultTimeLocale "%Y-%m-%d"
 
 main :: IO ()
 main = do
-  let assessment = 'assessTax' FY.tables taxReturn
+  let assessment = 'assessTax' tables taxReturn
   putStrLn . render $ 'Data.Tax.ATO.Pretty.summariseTaxReturnInfo' taxReturn
   putStrLn ""
   putStrLn . render $ 'Data.Tax.ATO.Pretty.summariseAssessment' assessment
 
-taxReturn :: 'TaxReturnInfo' FY.FY Rational
+taxReturn :: 'TaxReturnInfo' FY Rational
 taxReturn = 'newTaxReturnInfo'
   & set 'paymentSummariesIndividualNonBusiness'
       [ 'newPaymentSummaryIndividualNonBusiness' \"53 004 085 616\"  -- ABN
@@ -252,7 +256,7 @@ taxReturn = 'newTaxReturnInfo'
           "MBF" "98765432" (Money 250) (Money  60) 'BenefitCode31'
       ]
 
-  & set ('deductions' . 'workRelatedTravelExpenses') (Money 1000)
+  & set ('deductions' . 'workRelatedCarExpenses') ('applyCentsPerKilometreMethod' @FY 3333)
   & set ('deductions' . 'personalSuperannuationContributions') (Money 5000)
 @
 

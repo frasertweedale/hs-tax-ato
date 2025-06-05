@@ -33,6 +33,9 @@
   assets, and the `declineInValue` function for calculating the
   decline in value in a given financial year.
 
+- Added the "cents-per-kilometre" method for car expense deductions.
+  Usage: `applyCentsPerKilometreMethod @FY kms`.  ([#13])
+
 - Implement Medicare levy low income family thresholds, including
   increase based on number of dependents.  Senior and pensioners
   individual and family thresholds remain unimplemented.
@@ -91,6 +94,7 @@
 
 [#8]: https://github.com/frasertweedale/hs-tax-ato/issues/8
 [#12]: https://github.com/frasertweedale/hs-tax-ato/issues/12
+[#13]: https://github.com/frasertweedale/hs-tax-ato/issues/13
 [#16]: https://github.com/frasertweedale/hs-tax-ato/issues/16
 
 
