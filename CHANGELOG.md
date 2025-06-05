@@ -36,6 +36,14 @@
 - Added the "cents-per-kilometre" method for car expense deductions.
   Usage: `applyCentsPerKilometreMethod @FY kms`.  ([#13])
 
+- Added home office expense deduction methods ([#7]).  Usage
+
+  ```
+  applyFixedRateMethod @FY hours
+  applyShortcutMethod @FY hours
+  applyFixedRateMethodPre2023 @FY hours
+  ```
+
 - Implement Medicare levy low income family thresholds, including
   increase based on number of dependents.  Senior and pensioners
   individual and family thresholds remain unimplemented.
@@ -92,6 +100,7 @@
 
 - Fix FY2024 private health insurance rebate tier thresholds.
 
+[#7]: https://github.com/frasertweedale/hs-tax-ato/issues/7
 [#8]: https://github.com/frasertweedale/hs-tax-ato/issues/8
 [#12]: https://github.com/frasertweedale/hs-tax-ato/issues/12
 [#13]: https://github.com/frasertweedale/hs-tax-ato/issues/13

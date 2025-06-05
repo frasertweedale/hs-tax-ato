@@ -48,6 +48,13 @@ module Data.Tax.ATO.Common
   , applyCentsPerKilometreMethod
   , HasCentsPerKilometreMethod
 
+  , applyFixedRateMethod
+  , HasFixedRateMethod
+  , applyFixedRateMethodPre2023
+  , HasFixedRateMethodPre2023
+  , applyShortcutMethod
+  , HasShortcutMethod
+
   -- * Convenience functions
   , thresholds'
   , marginal'
@@ -201,3 +208,125 @@ applyCentsPerKilometreMethod
   :: forall y a. (HasCentsPerKilometreMethod y, Fractional a, Ord a)
   => a -> Money a
 applyCentsPerKilometreMethod kms = Money $ centsPerKilometre @y * min kms 5000 / 100
+
+
+-- | See 'applyFixedRateMethod'
+class HasFixedRateMethod y where
+  fixedRateMethodCentsPerHour :: Num a => a
+
+instance HasFixedRateMethod 2023 where
+  fixedRateMethodCentsPerHour = 67
+instance HasFixedRateMethod 2024 where
+  fixedRateMethodCentsPerHour = 67
+instance HasFixedRateMethod 2025 where
+  fixedRateMethodCentsPerHour = 70
+
+-- | The updated fixed rate method available from the 2022–23 income
+-- year.  It covers:
+--
+-- * home and mobile internet or data expenses
+-- * mobile and home phone usage expenses
+-- * electricity and gas (energy expenses) for heating, cooling and lighting
+-- * stationery and computer consumables, such as printer ink and paper.
+--
+-- You can separately claim deductions for work-related use of
+-- technology and office furniture, and (in limited circumstances)
+-- occupancy expenses and cleaning expenses.
+--
+-- Use @TypeApplications@ to specify the financial year, e.g.
+--
+-- @
+-- import Data.Tax.ATO.FY.2025 (FY)
+--
+-- y = applyFixedRateMethod \@2025 1111  -- using type literal
+-- x = applyFixedRateMethod \@FY   1111  -- same thing, using type synonym
+-- @
+--
+-- For earlier income years use 'applyFixedRateMethodPre2023'.
+--
+applyFixedRateMethod
+  :: forall y a. (HasFixedRateMethod y, Fractional a)
+  => a -> Money a
+applyFixedRateMethod hours = Money $ fixedRateMethodCentsPerHour @y * hours / 100
+
+
+-- | See 'applyShortcutMethod'
+class HasShortcutMethod y where
+  shortcutMethodCentsPerHour :: Num a => a
+
+instance (2020 <= y, y <= 2022) => HasShortcutMethod y where
+  shortcutMethodCentsPerHour = 80
+
+-- | The shortcut method for working from home deductions was
+-- available from 1 March 2020 to 30 June 2020 in the 2019–20 income
+-- year, and for the 2020–21 and 2021–22 income years.  It covers:
+--
+-- * phone and data expenses
+-- * internet expenses
+-- * the decline in value of equipment and furniture
+-- * electricity and gas (energy expenses) for heating, cooling and lighting.
+--
+-- Use @TypeApplications@ to specify the financial year, e.g.
+--
+-- @
+-- import Data.Tax.ATO.FY.2025 (FY)
+--
+-- y = applyShortcutMethod \@2025 1111  -- using type literal
+-- x = applyShortcutMethod \@FY   1111  -- same thing, using type synonym
+-- @
+--
+applyShortcutMethod
+  :: forall y a. (HasShortcutMethod y, Fractional a)
+  => a -> Money a
+applyShortcutMethod hours = Money $ shortcutMethodCentsPerHour @y * hours / 100
+
+
+-- | See 'applyFixedRateMethodPre2023'
+class HasFixedRateMethodPre2023 y where
+  fixedRateMethodPre2023CentsPerHour :: Num a => a
+
+instance (2002 <= y, y <= 2022, FinancialYear y) => HasFixedRateMethodPre2023 y where
+  fixedRateMethodPre2023CentsPerHour = case fromProxy (Proxy @y) of
+    y | y > 2018, y <= 2022 -> 52
+      | y > 2014, y <= 2018 -> 45
+      | y > 2010, y <= 2014 -> 34
+      | y > 2004, y <= 2010 -> 26
+      | y > 2001, y <= 2004 -> 20
+      | otherwise           ->  0  -- can't happen
+
+-- | The fixed rate method available up to the 2021–22 income year.
+-- It differs from the current fixed rate method (see
+-- 'HasFixedRateMethod') in which categories of expenses are
+-- included.  This method covers:
+--
+-- * the decline in value of home office furniture and
+--   furnishings – for example, a desk
+-- * electricity and gas (energy expenses) for heating,
+--   cooling and lighting
+-- * cleaning your dedicated home office.
+--
+-- You should separately claim for:
+--
+-- * home phone and internet expenses, including the decline in
+--   value of the handset
+-- * stationery and computer consumables, such as printer ink
+--   and paper
+-- * decline in value of depreciating assets other than
+--   home office furniture and furnishings used for work
+--   purposes – for example, computers and laptops.
+--
+-- Use @TypeApplications@ to specify the financial year, e.g.
+--
+-- @
+-- import Data.Tax.ATO.FY.2025 (FY)
+--
+-- y = applyFixedRateMethodPre2023 \@2025 1111  -- using type literal
+-- x = applyFixedRateMethodPre2023 \@FY   1111  -- same thing, using type synonym
+-- @
+--
+-- For later income years, use 'applyFixedRateMethod'.
+--
+applyFixedRateMethodPre2023
+  :: forall y a. (HasFixedRateMethodPre2023 y, Fractional a)
+  => a -> Money a
+applyFixedRateMethodPre2023 hours = Money $ fixedRateMethodPre2023CentsPerHour @y * hours / 100

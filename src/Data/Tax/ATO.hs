@@ -124,6 +124,12 @@ module Data.Tax.ATO
   -- *** Deduction methods
   , HasCentsPerKilometreMethod
   , applyCentsPerKilometreMethod
+  , HasFixedRateMethod
+  , applyFixedRateMethod
+  , HasFixedRateMethodPre2023
+  , applyFixedRateMethodPre2023
+  , HasShortcutMethod
+  , applyShortcutMethod
 
   -- ** Tax offsets
   , Offsets
