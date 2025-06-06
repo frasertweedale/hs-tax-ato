@@ -8,9 +8,9 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.19.20250506
+# version: 0.19.20250531
 #
-# REGENDATA ("0.19.20250506",["github","--haddock","tax-ato.cabal"])
+# REGENDATA ("0.19.20250531",["github","--haddock","tax-ato.cabal"])
 #
 name: Haskell-CI
 on:
@@ -46,16 +46,6 @@ jobs:
           - compiler: ghc-9.6.7
             compilerKind: ghc
             compilerVersion: 9.6.7
-            setup-method: ghcup
-            allow-failure: false
-          - compiler: ghc-9.4.8
-            compilerKind: ghc
-            compilerVersion: 9.4.8
-            setup-method: ghcup
-            allow-failure: false
-          - compiler: ghc-9.2.8
-            compilerKind: ghc
-            compilerVersion: 9.2.8
             setup-method: ghcup
             allow-failure: false
       fail-fast: false
