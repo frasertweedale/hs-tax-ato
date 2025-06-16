@@ -1,3 +1,11 @@
+## Version NEXT
+
+### Bug fixes
+
+- `paygInstalmentIncome` now includes ESS discounts that were not
+  subject to withholding.
+
+
 ## Version 2025.1
 
 ### Features and enhancements

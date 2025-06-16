@@ -177,7 +177,10 @@ module Data.Tax.ATO
   , module Data.Tax.ATO.Rounding
   ) where
 
-import Control.Lens (Getter, Lens', (&), foldOf, lens, preview, set, to, view, views)
+import Control.Lens
+  ( Getter, Lens'
+  , (&), filtered, foldOf, lens, preview, set, to, view, views
+  )
 import Data.Time (Day)
 
 import Data.Tax
@@ -665,7 +668,18 @@ division293Income info =
   -- TODO super lump sum taxed elements with zero tax rate
   -- TODO assessable FHSS released amount
 
-paygInstalmentIncome :: (RealFrac a) => TaxReturnInfo y a -> Money a
+-- | PAYG instalment income includes:
+--
+-- * Dividends and interest payments
+-- * Foreign income
+-- * Payments where amounts withheld due to non-quotation of TFN or ABN
+-- * Discounts on ESS interests where amounts not withheld
+--
+-- It also includes rent, business income and partnership/trust income, but
+-- this library does not yet implement these features so these amounts are
+-- are not reflected in this calculation.
+--
+paygInstalmentIncome :: forall y a. (RealFrac a) => TaxReturnInfo y a -> Money a
 paygInstalmentIncome info =
   -- TODO gross rent
   view (dividends . taxableIncome) info
@@ -679,6 +693,11 @@ paygInstalmentIncome info =
   -- TODO gross income where tax withheld due to not provide TFN
   -- TODO withdrawal from farm management deposits
   -- TODO fuel tax credits
+
+  -- Discounts on ESS interests not subject to withholding.
+  -- These are "ordinary income", but are not "withholding
+  -- payments".  See Taxation Administration Act 1953 s 45-120.
+  <> view (ess . traverse . filtered ((== Money (0 :: a)) . view taxWithheld) . taxableIncome) info
 
 -- | Assess a tax return, given tax tables and tax return info.
 assessTax
