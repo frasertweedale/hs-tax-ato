@@ -183,9 +183,10 @@ instance (Foldable t, HasTaxWithheld x a a, Num a)
 class HasCentsPerKilometreMethod y where
   centsPerKilometre :: Num a => a
 
-instance (2016 <= y, y <= 2025, FinancialYear y) => HasCentsPerKilometreMethod y where
+instance (2016 <= y, y <= 2026, FinancialYear y) => HasCentsPerKilometreMethod y where
   centsPerKilometre = case fromProxy (Proxy @y) of
-    y | y == 2025           -> 88
+    y | y == 2026           -> 88
+      | y == 2025           -> 88
       | y == 2024           -> 85
       | y == 2023           -> 78
       | y > 2020, y <= 2022 -> 72
@@ -214,12 +215,13 @@ applyCentsPerKilometreMethod kms = Money $ centsPerKilometre @y * min kms 5000 /
 class HasFixedRateMethod y where
   fixedRateMethodCentsPerHour :: Num a => a
 
-instance HasFixedRateMethod 2023 where
-  fixedRateMethodCentsPerHour = 67
-instance HasFixedRateMethod 2024 where
-  fixedRateMethodCentsPerHour = 67
-instance HasFixedRateMethod 2025 where
-  fixedRateMethodCentsPerHour = 70
+instance (2023 <= y, y <= 2026, FinancialYear y) => HasFixedRateMethod y where
+  fixedRateMethodCentsPerHour = case fromProxy (Proxy @y) of
+    y | y == 2023           -> 67
+      | y == 2024           -> 67
+      | y == 2025           -> 70
+      | y == 2026           -> 70  -- TODO
+      | otherwise           ->  0  -- can't happen
 
 -- | The updated fixed rate method available from the 2022–23 income
 -- year.  It covers:

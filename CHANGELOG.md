@@ -5,6 +5,12 @@
 - `paygInstalmentIncome` now includes ESS discounts that were not
   subject to withholding.
 
+### Features and enhancements
+
+- Add preliminary `FY2026` module.  Medicare levy thresholds and
+  private health insurance rebate rates are not-final, and other
+  changes are expected.
+
 
 ## Version 2025.1
 
