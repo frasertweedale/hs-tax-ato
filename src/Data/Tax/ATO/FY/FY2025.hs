@@ -17,10 +17,6 @@
 {-# LANGUAGE DataKinds #-}
 
 -- | Tax tables for 2024–25 financial year.
---
--- These data are NOT YET FINAL.  We are waiting on federal budget
--- (25 March 2025) to confirm Medicare Levy thresholds, and the PHI
--- rebate adjustment factor (~1 April 2025).
 module Data.Tax.ATO.FY.FY2025 (FY, fyProxy, tables) where
 
 import Data.Proxy
@@ -79,8 +75,8 @@ individualIncomeTax = marginal'
   , (135000, 0.37 - 0.30)
   , (190000, 0.45 - 0.37) ]
 
--- Rebate adjustment factor = TBC (currently re-using FY2024 rates)
--- However, the /thresholds/ did change this year.
+-- Rebate adjustment factor = 0.987
+-- https://www.health.gov.au/news/phi-circulars/phi-2125-private-health-insurance-rebate-adjustment-factor-effective-1-april-2025
 privateHealthInsuranceRebateRates
   :: (Fractional a) => PrivateHealthInsuranceRebateRates a
 privateHealthInsuranceRebateRates =
