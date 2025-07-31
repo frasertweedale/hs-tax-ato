@@ -36,26 +36,14 @@ fyProxy :: Proxy FY
 fyProxy = Proxy
 
 help :: (Fractional a, Ord a) => Tax (Money a) (Money a)
-help = thresholds'
-  [ (56156, 0.01)
-  , (64838, 0.01)
-  , (68727, 0.005)
-  , (72852, 0.005)
-  , (77223, 0.005)
-  , (81856, 0.005)
-  , (86767, 0.005)
-  , (91974, 0.005)
-  , (97492, 0.005)
-  , (103342, 0.005)
-  , (109543, 0.005)
-  , (116116, 0.005)
-  , (123082, 0.005)
-  , (130467, 0.005)
-  , (138295, 0.005)
-  , (146594, 0.005)
-  , (155389, 0.005)
-  , (164712, 0.005)
-  ]
+help =
+  lesserOf
+    ( flat 0.10 )
+    ( marginal'
+        [ ( 67_000, 0.15       )
+        , (125_000, 0.17 - 0.15)
+        ]
+    )
 
 medicare :: (Fractional a) => MedicareLevyRatesAndThresholds a
 medicare = MedicareLevyRatesAndThresholds
