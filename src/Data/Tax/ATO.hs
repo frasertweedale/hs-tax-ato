@@ -177,6 +177,8 @@ module Data.Tax.ATO
   , module Data.Tax.ATO.Rounding
   ) where
 
+import Data.Proxy
+
 import Control.Lens
   ( Getter, Lens'
   , (&), filtered, foldOf, lens, preview, set, to, view, views
@@ -595,13 +597,16 @@ individualTax table =
 -- | Tax to calculate compulsory study and training loan repayments
 -- (e.g. HELP, SFSS)
 studyAndTrainingLoanRepaymentTax
-  :: (Fractional a, Ord a)
+  :: forall y a. (FinancialYear y, Fractional a, Ord a)
   => TaxTables y a
   -> TaxReturnInfo y a
   -> Tax (Money a) (Money a)
-studyAndTrainingLoanRepaymentTax table info =
-  limit (view helpBalance info) (ttHelp table)
-  <> limit (view sfssBalance info) (ttSfss table)
+studyAndTrainingLoanRepaymentTax table info = case fromProxy (Proxy @y) of
+  y | y < 2020 ->
+        limit (view helpBalance info) (ttHelp table)
+        <> limit (view sfssBalance info) (ttSfss table)
+    | otherwise ->
+        limit (view helpBalance info <> view sfssBalance info) (ttHelp table)
 
 -- | Taxable income
 instance (RealFrac a) => HasTaxableIncome (TaxReturnInfo y) a a where

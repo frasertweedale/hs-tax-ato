@@ -5,6 +5,9 @@
 - `paygInstalmentIncome` now includes ESS discounts that were not
   subject to withholding.
 
+- FY2020+ now calculate study and training loan repayment correctly
+  where individual has both HELP and SFSS balances.
+
 ### Features and enhancements
 
 - Add preliminary `FY2026` module.  Medicare levy thresholds and

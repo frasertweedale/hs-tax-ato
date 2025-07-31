@@ -76,6 +76,8 @@ data TaxTables y a = TaxTables
   , ttMedicareLevySurcharge :: Tax (Money a) (Money a)
   , ttHelp :: Tax (Money a) (Money a)
   , ttSfss :: Tax (Money a) (Money a)
+  -- ^ Ignored since FY2020 (uses consolidated rate from @ttHelp@).
+  -- Just set it to @ttHelp@ or @undefined@.
   , ttAdditional :: Tax (Money a) (Money a)
   -- ^ Additional taxes and offsets that apply at EOY
   , ttPHIRebateRates :: PrivateHealthInsuranceRebateRates a
