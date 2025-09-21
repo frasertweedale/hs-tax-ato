@@ -1,5 +1,48 @@
 ## Version NEXT
 
+### CGT overhaul
+
+Capital gains tax (CGT) received a significant overhaul.
+Enhancements include:
+
+- Added the a `CGTAsset` data type, which includes `CGTAssetType`
+  for tracking different categories of CGT assets.
+
+- Implemented a separate loss carry-forward for collectables.  The
+  new `CapitalLossCarryForward` data type has separate fields for
+  capital losses on collectables and other capital losses.
+
+- Capital losses on personal use assets (`AssetTypePersonalUse`) are
+  disregarded.
+
+- Added the `EntityType` data type.  This ensures the correct CGT
+  discount proportion is used depending on whether the taxed entity
+  is an `Individual`, `Company`, `Trust` or `SuperFund`.
+
+- The `assessCGTEvents` function now has an `EntityType` argument.
+
+- Capital gains from trusts can now be included in CGT calculations.
+  The `CapitalGainsFromTrust` data type represents capital gains
+  from trust distributions.  The 'prepTrustCGT' function converts
+  `CapitalGainsFromTrust` values into CGT events that represent the
+  grossed-up gain, including eligibility for the CGT discount or
+  small business concession.
+
+- Added convenience constructors for various kinds of CGT events.
+
+- Added some data types that will support the implementation (in a
+  future release) of various CGT exemptions and small business CGT
+  concessions.
+
+- The `Data.Tax.ATO.Pretty.summariseCGTSchedule` prints the *CGT
+  schedule* for a given `CGTAssessment`.
+
+### Other features and enhancements
+
+- Add preliminary `FY2026` module.  Medicare levy thresholds and
+  private health insurance rebate rates are not-final, and other
+  changes are expected.
+
 ### Bug fixes
 
 - `paygInstalmentIncome` now includes ESS discounts that were not
@@ -7,12 +50,6 @@
 
 - FY2020+ now calculate study and training loan repayment correctly
   where individual has both HELP and SFSS balances.
-
-### Features and enhancements
-
-- Add preliminary `FY2026` module.  Medicare levy thresholds and
-  private health insurance rebate rates are not-final, and other
-  changes are expected.
 
 
 ## Version 2025.1

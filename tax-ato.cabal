@@ -76,6 +76,7 @@ library
     Data.Tax.ATO.FY.FY2025
     Data.Tax.ATO.FY.FY2026
   build-depends:
+    , containers >= 0.6 && < 0.8
     , lens >= 4.18 && < 6
     , time >= 1.11 && < 1.15
     , tax >= 0.2 && < 0.3

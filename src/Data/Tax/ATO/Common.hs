@@ -26,8 +26,11 @@ Common taxes and helpers.
 
 module Data.Tax.ATO.Common
   (
+  -- * Taxable entity types
+    EntityType(..)
+
   -- * Tax tables
-    TaxTables(..)
+  , TaxTables(..)
 
   -- * Classes
   , HasTaxableIncome(..)
@@ -68,6 +71,13 @@ import GHC.TypeLits
 import Data.Tax
 import Data.Tax.ATO.PrivateHealthInsuranceRebate
 import Data.Tax.ATO.FY
+
+
+-- | Some tax calculations depend on the type of entity being assessed.
+data EntityType = Individual | Company | Trust | SuperFund
+  deriving (Eq, Ord, Show)
+
+
 
 -- | A set of tax tables for a particular financial year
 data TaxTables y a = TaxTables

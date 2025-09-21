@@ -60,6 +60,8 @@ module Data.Tax.ATO
 
   -- *** Capital gains tax (CGT)
   , HasCapitalLossCarryForward(..)
+  , capitalLossCarryForwardOther
+  , capitalLossCarryForwardCollectables
   , cgtEvents
 
   -- *** Employee share schemes
@@ -350,7 +352,11 @@ dependentChildren =
 -- +------------------------------------------------------+----------------------------------+
 -- | 'foreignIncome'                                      | Foreign income                   |
 -- +------------------------------------------------------+----------------------------------+
--- | 'cgtEvents'                                          | Capital gains and losses         |
+-- | 'cgtEvents' :: ['CGTEvent']                          | Capital gains tax events for     |
+-- |                                                      | this income year                 |
+-- +------------------------------------------------------+----------------------------------+
+-- | 'capitalLossCarryForward'                            | Capital losses carried forward   |
+-- |   :: 'CapitalLossCarryForward'                       | from previous income years       |
 -- +------------------------------------------------------+----------------------------------+
 -- | 'deductions'                                         | Deductions                       |
 -- +------------------------------------------------------+----------------------------------+
@@ -379,7 +385,7 @@ data TaxReturnInfo y a = TaxReturnInfo
   , _cgtEvents :: [CGTEvent a]
   , _deductions :: Deductions a
   , _offsets :: Offsets a
-  , _triCapitalLossCarryForward :: Money a
+  , _triCapitalLossCarryForward :: CapitalLossCarryForward a
   , _phi :: [PrivateHealthInsurancePolicyDetail a]
   , _spouseDetails :: Maybe (SpouseDetails a)
   , _incomeTests :: IncomeTests a
@@ -411,7 +417,7 @@ newTaxReturnInfo = TaxReturnInfo
   mempty -- CGT events
   mempty -- deductions
   mempty -- offsets
-  mempty -- cap loss carry forward
+  newCapitalLossCarryForward
   mempty -- private health insurance policy details
   Nothing -- spouse details
   newIncomeTests
@@ -621,7 +627,7 @@ instance (RealFrac a) => HasTaxableIncome (TaxReturnInfo y) a a where
         , view (interest . taxableIncome) info
         , view (dividends . taxableIncome) info
         , view (ess . taxableIncome) info
-        , view (cgtEvents . to (assessCGTEvents cf) . cgtNetGain) info
+        , view (cgtEvents . to (assessCGTEvents Individual cf) . cgtNetGain) info
         , view foreignIncome info
         ]
     in
@@ -710,7 +716,7 @@ assessTax
   => TaxTables y a -> TaxReturnInfo y a -> TaxAssessment a
 assessTax tables info =
   let
-    cg = assessCGTEvents
+    cg = assessCGTEvents Individual
           (view capitalLossCarryForward info) (view cgtEvents info)
     taxable = view taxableIncome info
     due = getTax (individualTax tables) taxable

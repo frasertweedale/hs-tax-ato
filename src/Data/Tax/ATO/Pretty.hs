@@ -26,16 +26,18 @@ Monetary values are rounded to the nearest whole cent (half-up).
 
 module Data.Tax.ATO.Pretty
   ( summariseTaxReturnInfo
+  , summariseCGTSchedule
   , summariseAssessment
   , formatMoney
   ) where
 
 import Data.List.NonEmpty as NE (NonEmpty, groupAllWith, head)
 
-import Control.Lens (ALens', cloneLens, foldOf, view, views)
+import Control.Lens (ALens', at, cloneLens, foldOf, view, views)
 import qualified Text.PrettyPrint as P
 
 import Data.Tax.ATO
+import Data.Tax.ATO.Common (EntityType(..))
 import Data.Tax.ATO.CGT
 
 
@@ -58,19 +60,44 @@ formatMoney (Money x) =
     putCommas (a:b:c:d:rest) | d /= '-' = a:b:c:',':putCommas (d:rest)
     putCommas rest                      = rest
 
-twoCol :: (P.Doc, Money Rational) -> P.Doc
-twoCol (label, value) = label P.$$ P.nest (80 - colWidthMoney) (formatMoney value)
-
 omitIfZero :: ((a, Money Rational) -> P.Doc) -> (a, Money Rational) -> P.Doc
 omitIfZero f rec@(_,x)
   | x == mempty = P.empty
   | otherwise   = f rec
 
+data Formatter a = Formatter Int (a -> P.Doc)
+
+prepend :: String -> Formatter a -> Formatter a
+prepend s (Formatter w f) = Formatter (w + length s) ((P.text s <>) . f)
+
+append :: String -> Formatter a -> Formatter a
+append s (Formatter w f) = Formatter (w + length s) ((<> P.text s) . f)
+
+moneyFormatter :: Formatter (Money Rational)
+moneyFormatter = Formatter colWidthMoney formatMoney
+
+-- | Make a formatter that has a same width as the given formatter,
+-- but outputs blank space.
+blank :: Formatter a -> Formatter a
+blank (Formatter w _) = Formatter w (\_ -> P.text $ replicate w ' ')
+
+
+twoCol :: (P.Doc, Money Rational) -> P.Doc
+twoCol = twoCol' id moneyFormatter
+
+twoCol' :: (a -> P.Doc) -> Formatter b -> (a, b) -> P.Doc
+twoCol' fa (Formatter wb fb) (a, b) =
+  fa a
+  P.$$ P.nest (80 - wb) (fb b)
+
 threeCol :: (P.Doc, Money Rational, Money Rational) -> P.Doc
-threeCol (label, v1, v2) =
-  label
-  P.$$ P.nest (80 - 2 * colWidthMoney) (formatMoney v1)
-  P.<> formatMoney v2
+threeCol = threeCol' id moneyFormatter moneyFormatter
+
+threeCol' :: (a -> P.Doc) -> Formatter b -> Formatter c -> (a, b, c) -> P.Doc
+threeCol' fa (Formatter wb fb) (Formatter wc fc) (a, b, c) =
+  fa a
+  P.$$ P.nest (80 - wb - wc) (fb b)
+  P.<> fc c
 
 -- | 3-column layout with rightmost column blank
 threeColLeft :: (P.Doc, Money Rational) -> P.Doc
@@ -139,6 +166,69 @@ summariseESS l =
         , foldOf (traverse . essForeignSourceDiscounts) l )
     ]
 
+summariseCGTSchedule :: CGTAssessment Rational -> P.Doc
+summariseCGTSchedule o = P.vcat
+  [ "1  Current year capital gains and capital losses"
+  , let (g,l) = view (cgtGainsAndLossesByCategory . at CGTScheduleCategorySharesAUListed . traverse) o
+    in print3 "A" "K" ("  Australian listed shares", g, l)
+  , let (g,l) = view (cgtGainsAndLossesByCategory . at CGTScheduleCategorySharesOther . traverse) o
+    in print3 "B" "L" ("  Other shares", g, l)
+  , let (g,l) = view (cgtGainsAndLossesByCategory . at CGTScheduleCategoryUnitsAUListed . traverse) o
+    in print3 "C" "M" ("  Australian listed units", g, l)
+  , let (g,l) = view (cgtGainsAndLossesByCategory . at CGTScheduleCategoryUnitsOther . traverse) o
+    in print3 "D" "N" ("  Other units", g, l)
+  , let (g,l) = view (cgtGainsAndLossesByCategory . at CGTScheduleCategoryRealEstateAU . traverse) o
+    in print3 "E" "O" ("  Australian real estate", g, l)
+  , let (g,l) = view (cgtGainsAndLossesByCategory . at CGTScheduleCategoryRealEstateOther . traverse) o
+    in print3 "F" "P" ("  Other real estate", g, l)
+  , let (g,_) = view (cgtGainsAndLossesByCategory . at CGTScheduleCategoryTrust . traverse) o
+    in print2_ "G" ("  Capital gains from trusts", g)
+  , let (g,l) = view (cgtGainsAndLossesByCategory . at CGTScheduleCategoryCollectable . traverse) o
+    in print3 "H" "Q" ("  Collectables", g, l)
+  , let (g,l) = view (cgtGainsAndLossesByCategory . at CGTScheduleCategoryOther . traverse) o
+    in print3 "I" "R" ("  Other CGT assets and CGT events", g, l)
+  , let (g,_) = view (cgtGainsAndLossesByCategory . at CGTScheduleCategoryOther . traverse) o
+    in print2_ "S" ("  Previously deferred CGT relief", g)
+  , print2_ "J" ("  Total current year capital gains",  view cgtTotalCurrentYearGains o)
+
+  , P.empty
+  , "2  Capital losses"
+  , print2 "A" ("  Total current year capital losses",  view cgtTotalCurrentYearLosses o)
+  , print2 "B" ("  Total current year capital losses applied",   view cgtTotalCurrentYearLossesApplied o)
+  , print2 "C" ("  Total prior year net capital losses applied", view cgtTotalPriorYearLossesApplied o)
+  , let total = view cgtTotalCurrentYearLossesApplied o <> view cgtTotalPriorYearLossesApplied o
+    in print2 "E" ("  Total capital losses applied", total)
+
+  , P.empty
+  , "3  Unapplied net capital losses carried forward"
+  , print2 "A"
+      ("  Net capital losses from collectables carried forward"
+      , view (capitalLossCarryForward . capitalLossCarryForwardCollectables) o)
+  , print2 "B"
+      ("  Other capital losses carried forward"
+      , view (capitalLossCarryForward . capitalLossCarryForwardOther) o)
+
+  , P.empty
+  , "4  CGT discount"
+  , print2 "A" ("  Total CGT discount applied", view cgtTotalCGTDiscountApplied o)
+
+  , P.empty
+  , "6  Net capital gain"
+  , print2 "A" ("  Net capital gain", view cgtNetGain o)
+  ]
+  where
+    prepLabel s = "  " <> s <> " $"
+    print3 labelL labelR =
+      threeCol' id
+        (prepend (prepLabel labelL) moneyFormatter)
+        (prepend (prepLabel labelR) moneyFormatter)
+    print2_ labelL (k, v) =
+      threeCol' id
+        (prepend (prepLabel labelL) moneyFormatter)
+        (blank $ prepend (prepLabel labelL) moneyFormatter)
+        (k, v, mempty)
+    print2 label = twoCol' id (prepend (prepLabel label) moneyFormatter)
+
 summariseCGT :: TaxReturnInfo y Rational -> P.Doc
 summariseCGT info
   | o == nullCGTAssessment = P.empty
@@ -150,7 +240,7 @@ summariseCGT info
         , threeColLeft  ("    V Net capital losses carried forward", view cgtNetLossesCarriedForward o)
         ]
   where
-    o = assessCGTEvents (view capitalLossCarryForward info) (view cgtEvents info)
+    o = assessCGTEvents Individual (view capitalLossCarryForward info) (view cgtEvents info)
 
 deductionsTable :: [(ALens' (Deductions Rational) (Money Rational), String)]
 deductionsTable =
@@ -207,4 +297,4 @@ summariseAssessment assessment =
     ]
   P.$+$ P.text (replicate 80 '-')
   P.$+$ "Result of this notice" P.$$ P.nest colWidthLabel (views taxBalance formatMoney assessment)
-  P.$+$ "Net capital loss to carry forward" P.$$ P.nest colWidthLabel (views (taxCGTAssessment . capitalLossCarryForward) formatMoney assessment)
+  P.$+$ "Net capital loss to carry forward" P.$$ P.nest colWidthLabel (views (taxCGTAssessment . cgtNetLossesCarriedForward) formatMoney assessment)
