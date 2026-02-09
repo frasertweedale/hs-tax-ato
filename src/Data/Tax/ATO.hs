@@ -183,7 +183,7 @@ import Data.Proxy
 
 import Control.Lens
   ( Getter, Lens'
-  , (&), filtered, foldOf, lens, preview, set, to, view, views
+  , (&), foldOf, lens, preview, set, to, view, views
   )
 import Data.Time (Day)
 
@@ -684,7 +684,6 @@ division293Income info =
 -- * Dividends and interest payments
 -- * Foreign income
 -- * Payments where amounts withheld due to non-quotation of TFN or ABN
--- * Discounts on ESS interests where amounts not withheld
 --
 -- It also includes rent, business income and partnership/trust income, but
 -- this library does not yet implement these features so these amounts are
@@ -704,11 +703,6 @@ paygInstalmentIncome info =
   -- TODO gross income where tax withheld due to not provide TFN
   -- TODO withdrawal from farm management deposits
   -- TODO fuel tax credits
-
-  -- Discounts on ESS interests not subject to withholding.
-  -- These are "ordinary income", but are not "withholding
-  -- payments".  See Taxation Administration Act 1953 s 45-120.
-  <> view (ess . traverse . filtered ((== Money (0 :: a)) . view taxWithheld) . taxableIncome) info
 
 -- | Assess a tax return, given tax tables and tax return info.
 assessTax

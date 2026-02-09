@@ -45,9 +45,6 @@ Enhancements include:
 
 ### Bug fixes
 
-- `paygInstalmentIncome` now includes ESS discounts that were not
-  subject to withholding.
-
 - FY2020+ now calculate study and training loan repayment correctly
   where individual has both HELP and SFSS balances.
 
