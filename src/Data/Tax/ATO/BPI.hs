@@ -36,6 +36,7 @@ module Data.Tax.ATO.BPI
   , psiOther
   , psiDeductionsForPaymentsToAssociatesForPrincipalWork
   , psiTotalAmountOfOtherDeductions
+  , netPSI
   ) where
 
 import Control.Lens

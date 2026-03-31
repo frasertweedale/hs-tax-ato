@@ -125,6 +125,7 @@ summariseTaxReturnInfo info =
   P.$+$ vcatWith twoCol
     [ ("  20M Other net foreign source income" , view foreignIncome info)
     ]
+  P.$+$ views businessAndProfessionalItems summariseBPI info
   P.$+$ "Deductions"
   P.$+$ P.vcat (uncurry (summariseDeduction (view deductions info)) <$> deductionsTable)
   P.$+$ "Tax offsets"
@@ -165,6 +166,25 @@ summariseESS l =
         ( "    A Foreign source discounts"
         , foldOf (traverse . essForeignSourceDiscounts) l )
     ]
+
+summariseBPI :: BusinessAndProfessionalItemsSchedule Rational -> P.Doc
+summariseBPI bpi =
+  views personalServicesIncome summarisePSI bpi
+
+summarisePSI :: PersonalServicesIncome Rational -> P.Doc
+summarisePSI psi | netPSI psi == mempty
+                 = P.empty
+summarisePSI psi =
+  "  P1  Personal services income"
+  P.$+$ vcatWith (omitIfZero twoCol)
+    [ ("    M PSI - voluntary agreement", view psiVoluntaryAgreement psi)
+    , ("    N PSI - where Australian business number not quoted", view psiWhereABNNotQuoted psi)
+    , ("    O PSI - labour hire or other specified payments", view psiLabourHireOrOtherSpecifiedPayments psi)
+    , ("    J PSI - other", view psiOther psi)
+    , ("    K Deductions for payments to associates for principal work", view psiDeductionsForPaymentsToAssociatesForPrincipalWork psi)
+    , ("    L Total amount of other deductions against PSI", view psiTotalAmountOfOtherDeductions psi)
+    ]
+  P.$+$ twoCol ("    Net PSI", netPSI psi)
 
 summariseCGTSchedule :: CGTAssessment Rational -> P.Doc
 summariseCGTSchedule o = P.vcat
