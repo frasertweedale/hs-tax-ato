@@ -149,19 +149,19 @@ summariseESS [] = P.empty
 summariseESS l =
   "  12  Employee share schemes"
   P.$+$ P.vcat
-    [ twoCol
+    [ omitIfZero twoCol
         ( "    D Discount from upfront schemes - eligible for reduction"
         , foldOf (traverse . essTaxedUpfrontReduction) l )
-    , twoCol
+    , omitIfZero twoCol
         ( "    E Discount from upfront schemes - ineligible for reduction"
         , foldOf (traverse . essTaxedUpfrontNoReduction) l )
-    , twoCol
+    , omitIfZero twoCol
         ( "    F Discount from deferral schemes"
         , foldOf (traverse . essDeferral) l )
-    , threeColLeft
+    , omitIfZero threeColLeft
         ( "    C TFN amounts withheld from discounts"
         , foldOf (traverse . essTFNAmounts) l )
-    , twoCol
+    , omitIfZero twoCol
         ( "    A Foreign source discounts"
         , foldOf (traverse . essForeignSourceDiscounts) l )
     ]
