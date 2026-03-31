@@ -61,6 +61,20 @@ info =
       ( Money  2000 )
 ```
 
+### "Other income"
+
+Added the `otherIncome` field and the `OtherIncome` data type, which
+contains a number of fields for declaring various kinds of income
+(including FHSS released amounts).
+
+Example usage:
+
+```haskell
+info =
+  newTaxReturnInfoForTables tables
+  & set (otherIncome . otherIncomeCategory4) [("Airdrop", Money 5000)]
+```
+
 ### Other features and enhancements
 
 - Add `FY2026` module.  Apart from the usual Medicare levy and
