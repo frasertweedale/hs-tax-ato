@@ -323,52 +323,51 @@ dependentChildren =
 --
 -- The following lenses are available:
 --
--- +------------------------------------------------------+----------------------------------+
--- | 'mlsExemption'                                       | Medicare levy exemption          |
--- +------------------------------------------------------+----------------------------------+
--- | 'helpBalance'                                        | HELP, VSL, SSL, ABSTUDY SSL,     |
--- |                                                      | and AASL/TSL account balance     |
--- +------------------------------------------------------+----------------------------------+
--- | 'sfssBalance'                                        | SFSS account balance             |
--- +------------------------------------------------------+----------------------------------+
--- | 'paymentSummariesIndividualNonBusiness'              | PAYG payment summaries -         |
--- |                                                      | individual non-business          |
--- +------------------------------------------------------+----------------------------------+
--- | 'paymentSummariesForeignEmployment'                  | PAYG payment summaries -         |
--- |                                                      | foreign employment               |
--- +------------------------------------------------------+----------------------------------+
--- | 'paymentSummariesBusinessAndPersonalServicesIncome'  | PAYG payment summaries -         |
--- |                                                      | business and personal services   |
--- |                                                      | income                           |
--- +------------------------------------------------------+----------------------------------+
--- | 'paymentSummariesWithholdingWhereABNNotQuoted'       | PAYG payment summaries -         |
--- |                                                      | withholding where ABN not quoted |
--- +------------------------------------------------------+----------------------------------+
--- | 'interest'                                           | Interest income and tax withheld |
--- +------------------------------------------------------+----------------------------------+
--- | 'dividends'                                          | Dividend data                    |
--- +------------------------------------------------------+----------------------------------+
--- | 'ess'                                                | Employee Share Scheme statement  |
--- +------------------------------------------------------+----------------------------------+
--- | 'foreignIncome'                                      | Foreign income                   |
--- +------------------------------------------------------+----------------------------------+
--- | 'cgtEvents' :: ['CGTEvent']                          | Capital gains tax events for     |
--- |                                                      | this income year                 |
--- +------------------------------------------------------+----------------------------------+
--- | 'capitalLossCarryForward'                            | Capital losses carried forward   |
--- |   :: 'CapitalLossCarryForward'                       | from previous income years       |
--- +------------------------------------------------------+----------------------------------+
--- | 'deductions'                                         | Deductions                       |
--- +------------------------------------------------------+----------------------------------+
--- | 'offsets'                                            | Tax offsets                      |
--- +------------------------------------------------------+----------------------------------+
--- | 'privateHealthInsurancePolicyDetails'                | Private health insurance         |
--- |                                                      | policy details                   |
--- +------------------------------------------------------+----------------------------------+
--- | 'spouseDetails'                                      | Spouse Details (or @Nothing@)    |
--- +------------------------------------------------------+----------------------------------+
--- | 'incomeTests'                                        | Income Tests                     |
--- +------------------------------------------------------+----------------------------------+
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'mlsExemption'                                       | Medicare levy exemption                |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'helpBalance'                                        | HELP, VSL, SSL, ABSTUDY SSL,           |
+-- |                                                      | and AASL/TSL account balance           |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'sfssBalance'                                        | SFSS account balance                   |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'paymentSummariesIndividualNonBusiness'              | PAYG payment summaries -               |
+-- |                                                      | individual non-business                |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'paymentSummariesForeignEmployment'                  | PAYG payment summaries -               |
+-- |                                                      | foreign employment                     |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'paymentSummariesBusinessAndPersonalServicesIncome'  | PAYG payment summaries -               |
+-- |                                                      | business and personal services income  |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'paymentSummariesWithholdingWhereABNNotQuoted'       | PAYG payment summaries -               |
+-- |                                                      | withholding where ABN not quoted       |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'interest'                                           | Interest income and tax withheld       |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'dividends'                                          | Dividend data                          |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'ess'                                                | Employee Share Scheme statement        |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'foreignIncome'                                      | Foreign income                         |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'cgtEvents' :: ['CGTEvent']                          | Capital gains tax events for           |
+-- |                                                      | this income year                       |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'capitalLossCarryForward'                            | Capital losses carried forward         |
+-- |   :: 'CapitalLossCarryForward'                       | from previous income years             |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'deductions'                                         | Deductions                             |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'offsets'                                            | Tax offsets                            |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'privateHealthInsurancePolicyDetails'                | Private health insurance               |
+-- |                                                      | policy details                         |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'spouseDetails'                                      | Spouse Details (or @Nothing@)          |
+-- +------------------------------------------------------+----------------------------------------+
+-- | 'incomeTests'                                        | Income Tests                           |
+-- +------------------------------------------------------+----------------------------------------+
 --
 data TaxReturnInfo y a = TaxReturnInfo
   { _mlsExemption :: Days y
