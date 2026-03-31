@@ -56,6 +56,7 @@ library
   exposed-modules:
     Data.Tax.ATO
     Data.Tax.ATO.ABN
+    Data.Tax.ATO.BPI
     Data.Tax.ATO.TFN
     Data.Tax.ATO.CGT
     Data.Tax.ATO.Common
