@@ -33,7 +33,7 @@ module Data.Tax.ATO.Pretty
 
 import Data.List.NonEmpty as NE (NonEmpty, groupAllWith, head)
 
-import Control.Lens (ALens', at, cloneLens, foldOf, view, views)
+import Control.Lens (ALens', _2, at, cloneLens, foldOf, view, views)
 import qualified Text.PrettyPrint as P
 
 import Data.Tax.ATO
@@ -125,6 +125,7 @@ summariseTaxReturnInfo info =
   P.$+$ vcatWith twoCol
     [ ("  20M Other net foreign source income" , view foreignIncome info)
     ]
+  P.$+$ views otherIncome summariseOtherIncome info
   P.$+$ views businessAndProfessionalItems summariseBPI info
   P.$+$ "Deductions"
   P.$+$ P.vcat (uncurry (summariseDeduction (view deductions info)) <$> deductionsTable)
@@ -165,6 +166,33 @@ summariseESS l =
     , omitIfZero twoCol
         ( "    A Foreign source discounts"
         , foldOf (traverse . essForeignSourceDiscounts) l )
+    ]
+
+summariseOtherIncome :: OtherIncome Rational -> P.Doc
+summariseOtherIncome oi | view taxableIncome oi == Money (0 :: Rational)
+                        = P.empty
+summariseOtherIncome oi =
+  P.vcat
+    [ "  24  Other income"
+    , case view otherIncomeCategory1 oi of
+        [] -> P.empty
+        [(s, x)] -> twoCol ("    Y - Category 1 - " <> P.text s, x)
+        l -> twoCol ("    Y - Category 1 - <multiple>", foldOf (traverse . _2) l)
+    , case view otherIncomeCategory2 oi of
+        [] -> P.empty
+        [(s, x)] -> twoCol ("    X - Category 2 (ATO interest) - " <> P.text s, x)
+        l -> twoCol ("    X - Category 2 (ATO interest) - <multiple>", foldOf (traverse . _2) l)
+    , omitIfZero twoCol ("    R - Category 3 (FHSS)", view otherIncomeCategory3 oi)
+    , case view otherIncomeCategory4 oi of
+        [] -> P.empty
+        [(s, x)] -> twoCol ("    V - Category 4 - " <> P.text s, x)
+        l -> twoCol ("    V - Category 4 - <multiple>", foldOf (traverse . _2) l)
+    , omitIfZero threeColLeft
+        ("    E Tax withheld - LSPIA", view taxWithheldLumpSumPaymentsInArrears oi)
+    , omitIfZero threeColLeft
+        ("    Z Taxable professional income", view taxableProfessionalIncome oi)
+    , omitIfZero threeColLeft
+        ("    S Tax withheld - FHSS released amount", view taxWithheldAssessableFHSSReleasedAmount oi)
     ]
 
 summariseBPI :: BusinessAndProfessionalItemsSchedule Rational -> P.Doc

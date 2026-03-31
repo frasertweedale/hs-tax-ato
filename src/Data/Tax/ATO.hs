@@ -83,6 +83,17 @@ module Data.Tax.ATO
   -- *** Foreign income
   , foreignIncome
 
+  -- *** Other income
+  , OtherIncome
+  , otherIncome
+  , otherIncomeCategory1
+  , otherIncomeCategory2
+  , otherIncomeCategory3
+  , otherIncomeCategory4
+  , taxWithheldLumpSumPaymentsInArrears
+  , taxWithheldAssessableFHSSReleasedAmount
+  , taxableProfessionalIncome
+
   -- ** Medicare Levy Surcharge and Private Health Insurance
   , mlsExemption
   , privateHealthInsurancePolicyDetails
@@ -187,7 +198,7 @@ import Data.Proxy
 
 import Control.Lens
   ( Getter, Lens'
-  , (&), foldOf, lens, preview, set, to, view, views
+  , (&), _2, foldOf, lens, preview, set, to, view, views
   )
 import Data.Time (Day)
 
@@ -354,6 +365,8 @@ dependentChildren =
 -- +------------------------------------------------------+----------------------------------------+
 -- | 'ess'                                                | Employee Share Scheme statement        |
 -- +------------------------------------------------------+----------------------------------------+
+-- | 'otherIncome'                                        | /Other income/ fields                  |
+-- +------------------------------------------------------+----------------------------------------+
 -- | 'businessAndProfessionalItems'                       | See                                    |
 -- |                                                      | 'BusinessAndProfessionalItemsSchedule' |
 -- +------------------------------------------------------+----------------------------------------+
@@ -388,6 +401,7 @@ data TaxReturnInfo y a = TaxReturnInfo
   , _interest :: GrossAndWithheld a
   , _dividends :: [Dividend a]
   , _ess :: [ESSStatement a]
+  , _otherIncome :: OtherIncome a
   , _businessAndProfessionalItems :: BusinessAndProfessionalItemsSchedule a
   , _foreignIncome :: Money a
   , _cgtEvents :: [CGTEvent a]
@@ -421,6 +435,7 @@ newTaxReturnInfo = TaxReturnInfo
   mempty -- interest
   mempty -- dividends
   mempty -- ESS
+  newOtherIncome
   newBusinessAndProfessionalItemsSchedule
   mempty -- foreign income
   mempty -- CGT events
@@ -494,6 +509,9 @@ businessAndProfessionalItems =
 
 ess :: Lens' (TaxReturnInfo y a) [ESSStatement a]
 ess = lens _ess (\s b -> s { _ess = b })
+
+otherIncome :: Lens' (TaxReturnInfo y a) (OtherIncome a)
+otherIncome = lens _otherIncome (\s b -> s { _otherIncome = b })
 
 foreignIncome :: Lens' (TaxReturnInfo y a) (Money a)
 foreignIncome = lens _foreignIncome (\s b -> s { _foreignIncome = b })
@@ -641,6 +659,7 @@ instance (RealFrac a) => HasTaxableIncome (TaxReturnInfo y) a a where
         , view (interest . taxableIncome) info
         , view (dividends . taxableIncome) info
         , view (ess . taxableIncome) info
+        , view (otherIncome . taxableIncome) info
         , view (businessAndProfessionalItems . taxableIncome) info
         , view (cgtEvents . to (assessCGTEvents Individual cf) . cgtNetGain) info
         , view foreignIncome info
@@ -661,6 +680,7 @@ instance (Num a) => HasTaxWithheld (TaxReturnInfo y) a a where
     <> view (paymentSummariesWithholdingWhereABNNotQuoted . taxWithheld) info
     <> view (interest . taxWithheld) info
     <> view (ess . taxWithheld) info
+    <> view (otherIncome . taxWithheld) info
 
 fringeBenefits :: (Num a) => TaxReturnInfo y a -> Money a
 fringeBenefits info =
@@ -1249,3 +1269,67 @@ instance (Num a) => HasTaxableIncome ESSStatement a a where
 
 instance HasTaxWithheld ESSStatement a a where
   taxWithheld = essTFNAmounts
+
+
+-- | __24__ Other income
+data OtherIncome a = OtherIncome
+  { _category1 :: [(String, Money a)]
+  , _category2 :: [(String, Money a)]
+  , _category3 :: Money a
+  , _category4 :: [(String, Money a)]
+  , _taxWithheldLSPIA :: Money a
+  , _taxWithheldFHSS :: Money a
+  , _taxableProfessionalIncome :: Money a
+  }
+
+newOtherIncome :: (Num a) => OtherIncome a
+newOtherIncome = OtherIncome
+  { _category1 = []
+  , _category2 = []
+  , _category3 = mempty
+  , _category4 = []
+  , _taxWithheldLSPIA = mempty
+  , _taxWithheldFHSS  = mempty
+  , _taxableProfessionalIncome = mempty
+  }
+
+otherIncomeCategory1 :: Lens' (OtherIncome a) [(String, Money a)]
+otherIncomeCategory1 = lens _category1 (\s b -> s { _category1 = b })
+
+otherIncomeCategory2 :: Lens' (OtherIncome a) [(String, Money a)]
+otherIncomeCategory2 = lens _category2 (\s b -> s { _category2 = b })
+
+otherIncomeCategory3 :: Lens' (OtherIncome a) (Money a)
+otherIncomeCategory3 = lens _category3 (\s b -> s { _category3 = b })
+
+otherIncomeCategory4 :: Lens' (OtherIncome a) [(String, Money a)]
+otherIncomeCategory4 = lens _category4 (\s b -> s { _category4 = b })
+
+taxWithheldLumpSumPaymentsInArrears :: Lens' (OtherIncome a) (Money a)
+taxWithheldLumpSumPaymentsInArrears =
+  lens _taxWithheldLSPIA (\s b -> s { _taxWithheldLSPIA = b })
+
+taxWithheldAssessableFHSSReleasedAmount :: Lens' (OtherIncome a) (Money a)
+taxWithheldAssessableFHSSReleasedAmount =
+  lens _taxWithheldFHSS (\s b -> s { _taxWithheldFHSS = b })
+
+-- | __Z__ Taxable professional income
+--
+-- This field is used for __income averaging__ for /special professionals/
+-- (which this library does not yet implement).
+--
+taxableProfessionalIncome :: Lens' (OtherIncome a) (Money a)
+taxableProfessionalIncome =
+  lens _taxableProfessionalIncome (\s b -> s { _taxableProfessionalIncome = b })
+
+instance (Num a) => HasTaxableIncome OtherIncome a a where
+  taxableIncome = to $ \s ->
+    view (otherIncomeCategory1 . traverse . _2) s
+    <> view (otherIncomeCategory2 . traverse . _2) s
+    <> view otherIncomeCategory3 s
+    <> view (otherIncomeCategory4 . traverse . _2) s
+
+instance (Num a) => HasTaxWithheld OtherIncome a a where
+  taxWithheld = to $ \s ->
+    view taxWithheldLumpSumPaymentsInArrears s
+    <> view taxWithheldAssessableFHSSReleasedAmount s
