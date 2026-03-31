@@ -37,6 +37,30 @@ Enhancements include:
 - The `Data.Tax.ATO.Pretty.summariseCGTSchedule` prints the *CGT
   schedule* for a given `CGTAssessment`.
 
+### Personal services income (PSI)
+
+Added module `Data.Tax.ATO.BPI` (*Business and professional items*),
+which provides for declaring personal services income and associated
+deductions.
+
+Usage:
+
+```haskell
+info =
+  newTaxReturnInfoForTables tables
+  & set
+      ( businessAndProfessionalItems
+      . personalServicesIncome
+      . psiOther )
+      ( Money 18000 )
+  & set
+      ( businessAndProfessionalItems
+      . personalServicesIncome
+      . psiTotalAmountOfOtherDeductions
+      )
+      ( Money  2000 )
+```
+
 ### Other features and enhancements
 
 - Add `FY2026` module.  Apart from the usual Medicare levy and

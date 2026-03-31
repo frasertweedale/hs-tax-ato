@@ -76,6 +76,10 @@ module Data.Tax.ATO
   , essTFNAmounts
   , essForeignSourceDiscounts
 
+  -- ***Business and professional items***
+  , businessAndProfessionalItems
+  , module Data.Tax.ATO.BPI
+
   -- *** Foreign income
   , foreignIncome
 
@@ -188,8 +192,9 @@ import Control.Lens
 import Data.Time (Day)
 
 import Data.Tax
-import Data.Tax.ATO.CGT
 import Data.Tax.ATO.ABN (ABN)
+import Data.Tax.ATO.BPI
+import Data.Tax.ATO.CGT
 import Data.Tax.ATO.Common
 import Data.Tax.ATO.Depreciation
 import Data.Tax.ATO.FY
@@ -349,6 +354,9 @@ dependentChildren =
 -- +------------------------------------------------------+----------------------------------------+
 -- | 'ess'                                                | Employee Share Scheme statement        |
 -- +------------------------------------------------------+----------------------------------------+
+-- | 'businessAndProfessionalItems'                       | See                                    |
+-- |                                                      | 'BusinessAndProfessionalItemsSchedule' |
+-- +------------------------------------------------------+----------------------------------------+
 -- | 'foreignIncome'                                      | Foreign income                         |
 -- +------------------------------------------------------+----------------------------------------+
 -- | 'cgtEvents' :: ['CGTEvent']                          | Capital gains tax events for           |
@@ -380,6 +388,7 @@ data TaxReturnInfo y a = TaxReturnInfo
   , _interest :: GrossAndWithheld a
   , _dividends :: [Dividend a]
   , _ess :: [ESSStatement a]
+  , _businessAndProfessionalItems :: BusinessAndProfessionalItemsSchedule a
   , _foreignIncome :: Money a
   , _cgtEvents :: [CGTEvent a]
   , _deductions :: Deductions a
@@ -412,6 +421,7 @@ newTaxReturnInfo = TaxReturnInfo
   mempty -- interest
   mempty -- dividends
   mempty -- ESS
+  newBusinessAndProfessionalItemsSchedule
   mempty -- foreign income
   mempty -- CGT events
   mempty -- deductions
@@ -476,6 +486,11 @@ interest = lens _interest (\s b -> s { _interest = b })
 
 dividends :: Lens' (TaxReturnInfo y a) [Dividend a]
 dividends = lens _dividends (\s b -> s { _dividends = b })
+
+businessAndProfessionalItems
+  :: Lens' (TaxReturnInfo y a) (BusinessAndProfessionalItemsSchedule a)
+businessAndProfessionalItems =
+  lens _businessAndProfessionalItems (\s b -> s { _businessAndProfessionalItems = b })
 
 ess :: Lens' (TaxReturnInfo y a) [ESSStatement a]
 ess = lens _ess (\s b -> s { _ess = b })
@@ -626,6 +641,7 @@ instance (RealFrac a) => HasTaxableIncome (TaxReturnInfo y) a a where
         , view (interest . taxableIncome) info
         , view (dividends . taxableIncome) info
         , view (ess . taxableIncome) info
+        , view (businessAndProfessionalItems . taxableIncome) info
         , view (cgtEvents . to (assessCGTEvents Individual cf) . cgtNetGain) info
         , view foreignIncome info
         ]
