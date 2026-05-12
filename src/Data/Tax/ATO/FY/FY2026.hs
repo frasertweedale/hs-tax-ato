@@ -48,28 +48,28 @@ help =
 medicare :: (Fractional a) => MedicareLevyRatesAndThresholds a
 medicare = MedicareLevyRatesAndThresholds
   { medicareLevyRate                                  = 0.02
-  , medicareLevyThresholdIndividual                   = Money 27222
-  , medicareLevyThresholdIndividualSeniorAndPensioner = Money 43020
-  , medicareLevyThresholdFamily                       = Money 45907
-  , medicareLevyThresholdFamilySeniorAndPensioner     = Money 59886
-  , medicareLevyThresholdDependentChildIncrease       = Money  4216
+  , medicareLevyThresholdIndividual                   = Money 28011
+  , medicareLevyThresholdIndividualSeniorAndPensioner = Money 44268
+  , medicareLevyThresholdFamily                       = Money 47238
+  , medicareLevyThresholdFamilySeniorAndPensioner     = Money 61623
+  , medicareLevyThresholdDependentChildIncrease       = Money  4338
   }
 
--- | Medicare levy surcharge thresholds for 2025–26 (__NOT FINAL__)
+-- | Medicare levy surcharge thresholds for 2025–26
 medicareLevySurcharge :: (Fractional a, Ord a) => Tax (Money a) (Money a)
 medicareLevySurcharge =
   threshold (Money 101000) 0.01
   <> threshold (Money 118000) 0.0025
   <> threshold (Money 158000) 0.0025
 
--- Rebate adjustment factor = TBC (currently re-using July–March rate)
--- However, the /thresholds/ did change this year.
+-- Rebate adjustment factor = 0.993.
+-- https://www.health.gov.au/news/phi-circulars/phi-1226-private-health-insurance-rebate-adjustment-factor-effective-1-april-2026
 privateHealthInsuranceRebateRates
   :: (Fractional a) => PrivateHealthInsuranceRebateRates a
 privateHealthInsuranceRebateRates =
-  [ (101000, (0.24288, 0.24288), (0.28337, 0.28337), (0.32385, 0.32385) )
-  , (118000, (0.16192, 0.16192), (0.20240, 0.20240), (0.24288, 0.24288) )
-  , (158000, (0.08095, 0.08095), (0.12143, 0.12143), (0.16192, 0.16192) )
+  [ (101000, (0.24288, 0.24118), (0.28337, 0.28139), (0.32385, 0.32158) )
+  , (118000, (0.16192, 0.16079), (0.20240, 0.20098), (0.24288, 0.24118) )
+  , (158000, (0.08095, 0.08095), (0.12143, 0.12058), (0.16192, 0.16079) )
   ]
 
 tables :: (Ord a, Fractional a) => TaxTables FY a
