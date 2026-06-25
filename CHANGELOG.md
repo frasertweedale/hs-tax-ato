@@ -1,4 +1,4 @@
-## Version NEXT
+## Version 2026.1
 
 ### CGT overhaul
 
@@ -81,7 +81,8 @@ info =
   private health insurance rebate adjustments, study loan repayments
   changed to a marginal tax (previously a threshold tax).
 
-- Add preliminary `FY2027` module.  Values are not final.
+- Add preliminary `FY2027` module.  Values are not final.  The
+  new *$1,000 instant deduction* is not yet implemented.
 
 ### Bug fixes
 
