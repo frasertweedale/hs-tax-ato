@@ -86,6 +86,8 @@ info =
 - FY2020+ now calculate study and training loan repayment correctly
   where individual has both HELP and SFSS balances.
 
+- Pretty-printers updated to omit various line items when zero.
+
 
 ## Version 2025.1
 

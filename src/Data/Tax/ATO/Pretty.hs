@@ -33,7 +33,10 @@ module Data.Tax.ATO.Pretty
 
 import Data.List.NonEmpty as NE (NonEmpty, groupAllWith, head)
 
-import Control.Lens (ALens', _2, at, cloneLens, foldOf, view, views)
+import Control.Lens
+  ( ALens'
+  , _2, allOf, at, both, cloneLens, foldOf, nullOf, view, views
+  )
 import qualified Text.PrettyPrint as P
 
 import Data.Tax.ATO
@@ -61,9 +64,12 @@ formatMoney (Money x) =
     putCommas rest                      = rest
 
 omitIfZero :: ((a, Money Rational) -> P.Doc) -> (a, Money Rational) -> P.Doc
-omitIfZero f rec@(_,x)
-  | x == mempty = P.empty
-  | otherwise   = f rec
+omitIfZero = omitIf ((== mempty) . snd)
+
+omitIf :: (a -> Bool) -> (a -> P.Doc) -> a -> P.Doc
+omitIf test f a
+  | test a    = P.empty
+  | otherwise = f a
 
 data Formatter a = Formatter Int (a -> P.Doc)
 
@@ -111,28 +117,30 @@ vcatWith f = P.vcat . fmap f
 summariseTaxReturnInfo :: TaxReturnInfo y Rational -> P.Doc
 summariseTaxReturnInfo info =
   "Income"
-  P.$+$ vcatWith threeCol
+  P.$+$ vcatWith (omitIf (allOf both (== mempty)) threeCol)
     [ ( "  1   Salary or wages"
       , view (paymentSummariesIndividualNonBusiness . taxWithheld) info
       , view (paymentSummariesIndividualNonBusiness . taxableIncome) info
       )
     , ("  10  Interest"         , view (interest . taxWithheld) info, view (interest . taxableIncome) info)
     ]
-  P.$+$ "  11  Dividends"
+  P.$+$ ( if nullOf dividends info then P.empty else "  11  Dividends" )
   P.$+$ views dividends summariseDividends info
   P.$+$ views ess summariseESS info
   P.$+$ summariseCGT info
-  P.$+$ vcatWith twoCol
+  P.$+$ vcatWith (omitIfZero twoCol)
     [ ("  20M Other net foreign source income" , view foreignIncome info)
     ]
   P.$+$ views otherIncome summariseOtherIncome info
   P.$+$ views businessAndProfessionalItems summariseBPI info
   P.$+$ "Deductions"
   P.$+$ P.vcat (uncurry (summariseDeduction (view deductions info)) <$> deductionsTable)
-  P.$+$ "Tax offsets"
-  P.$+$ vcatWith threeColLeft
-    [ ("  20O Foreign income tax offset"  , view (offsets . foreignTaxOffset) info)
-    ]
+
+  P.$+$ ( \doc -> if P.isEmpty doc then P.empty else "Tax offsets" P.$+$ doc )
+    ( vcatWith (omitIfZero threeColLeft)
+        [ ("  20O Foreign income tax offset"  , view (offsets . foreignTaxOffset) info)
+        ]
+    )
 
 summariseDividends :: [Dividend Rational] -> P.Doc
 summariseDividends =
