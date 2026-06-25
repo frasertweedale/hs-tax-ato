@@ -81,6 +81,8 @@ info =
   private health insurance rebate adjustments, study loan repayments
   changed to a marginal tax (previously a threshold tax).
 
+- Add preliminary `FY2027` module.  Values are not final.
+
 ### Bug fixes
 
 - FY2020+ now calculate study and training loan repayment correctly
