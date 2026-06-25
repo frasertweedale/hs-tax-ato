@@ -39,9 +39,9 @@ Enhancements include:
 
 ### Other features and enhancements
 
-- Add preliminary `FY2026` module.  Medicare levy thresholds and
-  private health insurance rebate rates are not-final, and other
-  changes are expected.
+- Add `FY2026` module.  Apart from the usual Medicare levy and
+  private health insurance rebate adjustments, study loan repayments
+  changed to a marginal tax (previously a threshold tax).
 
 ### Bug fixes
 

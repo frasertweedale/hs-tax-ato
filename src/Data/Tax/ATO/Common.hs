@@ -232,7 +232,7 @@ instance (2023 <= y, y <= 2026, FinancialYear y) => HasFixedRateMethod y where
     y | y == 2023           -> 67
       | y == 2024           -> 67
       | y == 2025           -> 70
-      | y == 2026           -> 70  -- TODO
+      | y == 2026           -> 70
       | otherwise           ->  0  -- can't happen
 
 -- | The updated fixed rate method available from the 2022–23 income

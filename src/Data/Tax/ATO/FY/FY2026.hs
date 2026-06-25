@@ -18,10 +18,9 @@
 
 -- | Tax tables for 2025–26 financial year.
 --
--- These data are NOT YET FINAL.  We await the federal
--- budget to confirm Medicare Levy thresholds, and the PHI
--- rebate adjustment factor (~1 April 2026), and there could
--- be other changes.
+-- Apart from the usual Medicare levy and private health insurance
+-- rebate adjustments, study loan repayments changed to a marginal
+-- tax (previously a threshold tax).
 --
 module Data.Tax.ATO.FY.FY2026 (FY, fyProxy, tables) where
 
