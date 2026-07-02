@@ -1,4 +1,4 @@
-## Version NEXT
+## Version 2026.1.1
 
 ### Bug fixes
 
