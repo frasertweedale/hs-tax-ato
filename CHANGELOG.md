@@ -1,3 +1,13 @@
+## Version NEXT
+
+### Bug fixes
+
+- Fixed an incorrect private health insurance rebate rate in FY2026.
+
+- Fixed private health insurance rebate rates for FY2027 (the 1 July
+  to 30 March period).
+
+
 ## Version 2026.1
 
 ### CGT overhaul

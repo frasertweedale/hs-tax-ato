@@ -49,7 +49,7 @@ help =
   lesserOf
     ( flat 0.10 )
     ( marginal'
-        [ ( 69_528, 0.15       )  -- TODO confirm these numbers
+        [ ( 69_528, 0.15       )
         , (129_717, 0.17 - 0.15)
         ]
     )
@@ -65,21 +65,20 @@ medicare = MedicareLevyRatesAndThresholds
   , medicareLevyThresholdDependentChildIncrease       = Money  4338
   }
 
--- | Medicare levy surcharge thresholds for 2025–26
--- TODO update
+-- | Medicare levy surcharge thresholds for 2026–27
 medicareLevySurcharge :: (Fractional a, Ord a) => Tax (Money a) (Money a)
 medicareLevySurcharge =
-  threshold (Money 101000) 0.01
-  <> threshold (Money 118000) 0.0025
-  <> threshold (Money 158000) 0.0025
+  threshold (Money 105000) 0.01
+  <> threshold (Money 123000) 0.0025
+  <> threshold (Money 164000) 0.0025
 
 -- TODO update (~April 1 PHI circular)
 privateHealthInsuranceRebateRates
   :: (Fractional a) => PrivateHealthInsuranceRebateRates a
 privateHealthInsuranceRebateRates =
-  [ (101000, (0.24288, 0.24118), (0.28337, 0.28139), (0.32385, 0.32158) )
-  , (118000, (0.16192, 0.16079), (0.20240, 0.20098), (0.24288, 0.24118) )
-  , (158000, (0.08095, 0.08095), (0.12143, 0.12058), (0.16192, 0.16079) )
+  [ (105000, (0.24118, 0.24118), (0.28139, 0.28139), (0.32158, 0.32158) )
+  , (123000, (0.16079, 0.16079), (0.20098, 0.20098), (0.24118, 0.24118) )
+  , (164000, (0.08038, 0.08038), (0.12058, 0.12058), (0.16079, 0.16079) )
   ]
 
 tables :: (Ord a, Fractional a) => TaxTables FY a
